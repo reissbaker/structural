@@ -1,16 +1,16 @@
-import { Err, Result } from "./lib/result";
-import { Check } from "./lib/check";
-import GetType from "./lib/get-type";
+export import { Err, Result } from "./lib/result";
+export import { Check } from "./lib/check";
+export import GetType from "./lib/get-type";
 
-import typeOf from "./lib/checks/type-of";
-import instanceOf from "./lib/checks/instance-of";
-import value from "./lib/checks/value";
-import arr from "./lib/checks/arr";
-import { subtype } from "./lib/checks/struct";
-import dict from "./lib/checks/dict";
-import map from "./lib/checks/map";
-import set from "./lib/checks/set";
-import { num, str, bool, fn, sym, undef, nil, obj } from "./lib/checks/primitives";
+export import typeOf from "./lib/checks/type-of";
+export import instanceOf from "./lib/checks/instance-of";
+export import value from "./lib/checks/value";
+export import array from "./lib/checks/array";
+export import { subtype, exact } from "./lib/checks/struct";
+export import dict from "./lib/checks/dict";
+export import map from "./lib/checks/map";
+export import set from "./lib/checks/set";
+export import { num, str, bool, fn, sym, undef, nil, obj } from "./lib/checks/primitives";
 
 // TODO: make these more robust tests
 // TODO: test type inference. one way to do this: build up a struktural type, get the inner type
