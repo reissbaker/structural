@@ -1,6 +1,5 @@
 import { Check } from "../check";
 import { typeOf } from "./type-of";
-import { instanceOf } from "./instance-of";
 import { value } from "./value";
 
 export const num = typeOf<number>('number');
