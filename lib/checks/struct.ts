@@ -25,13 +25,21 @@ export class Struct<T extends CheckStruct> extends Check<UnwrappedCheckStruct<T>
     if(val === null) return new Err(`${val} is null`);
 
     const errs: string[] = [];
-    for(const prop in val) {
-      if(this.definition.hasOwnProperty(prop)) {
+    for(const prop in this.definition) {
+      if(val.hasOwnProperty(prop)) {
         const result = this.definition[prop].check(val[prop]);
         if(result instanceof Err) errs.push(result.message);
       }
       else {
-        if(this.exact) errs.push(`Unknown key ${prop} in ${val}`);
+        errs.push(`Missing key ${prop} in ${val}`);
+      }
+    }
+
+    if(this.exact) {
+      for(const prop in val) {
+        if(!this.definition.hasOwnProperty(prop)) {
+          errs.push(`Unknown key ${prop} in ${val}`);
+        }
       }
     }
 

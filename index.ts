@@ -13,16 +13,12 @@ export * from "./lib/checks/set";
 export * from "./lib/checks/primitives";
 export * from "./lib/checks/any";
 
-// TODO: make these more robust tests
 // TODO: test type inference. one way to do this: build up a struktural type, get the inner type
 // with GetType, and assign it something that should fail the type checker. assert the type checker
 // fails. also have vice-versa tests. unknown: can you ignore directories in the main tsconfig?
 // otherwise your whole build will fail. maybe just have different root dirs.
 
 /*
-const five = num.assert(5);
-const isnull = nil.assert(null);
-const strOrNum = str.or(num).assert("hi");
 const struct = subtype({
   hi: str,
   age: num,
