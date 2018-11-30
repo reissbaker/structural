@@ -97,3 +97,22 @@ describe("obj", () => {
     }).toThrow();
   });
 });
+
+describe("maybe", () => {
+  test("accepts the matching value", () => {
+    const check = t.maybe(t.num);
+    check.assert(5);
+  });
+
+  test("accepts null", () => {
+    const check = t.maybe(t.num);
+    check.assert(null);
+  });
+
+  test("rejects non-matching values", () => {
+    const check = t.maybe(t.num);
+    expect(() => {
+      check.assert(true);
+    }).toThrow();
+  });
+});
