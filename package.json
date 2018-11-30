@@ -6,7 +6,7 @@
   "main": "build/index.js",
   "license": "MIT",
   "scripts": {
-    "tsc": "node_modules/.bin/tsc",
+    "tsc": "rm -rf build/ && node_modules/.bin/tsc",
     "watch": "node_modules/.bin/tsc --watch"
   },
   "devDependencies": {
