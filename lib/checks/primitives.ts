@@ -10,7 +10,7 @@ export const fn = typeOf<Function>('function');
 export const sym = typeOf<Symbol>('symbol');
 export const undef = typeOf<undefined>('undefined');
 export const nil = value<null>(null);
-export const obj = instanceOf(Object);
+export const obj = typeOf<Object>('object');
 
 export function maybe<T>(check: Check<T>): Check<T|null> {
   return check.or(nil);
