@@ -17,7 +17,3 @@ export * from "./lib/checks/any";
 // with GetType, and assign it something that should fail the type checker. assert the type checker
 // fails. also have vice-versa tests. unknown: can you ignore directories in the main tsconfig?
 // otherwise your whole build will fail. maybe just have different root dirs.
-
-/*
-const maybeBool = nil.or(bool).assert(null);
-*/
