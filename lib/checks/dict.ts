@@ -14,6 +14,7 @@ export class Dict<V> extends Check<RawDict<V>> {
 
   check(val: any): Result<RawDict<V>> {
     if(typeof val !== 'object') return new Err(`${val} is not an object`);
+    if(val === null) return new Err(`${val} is null`);
 
     for(const prop in val) {
       const result = this.valueCheck.check(val[prop]);
@@ -24,6 +25,6 @@ export class Dict<V> extends Check<RawDict<V>> {
   }
 }
 
-export default function dict<V>(v: Check<V>): Dict<V> {
+export function dict<V>(v: Check<V>): Dict<V> {
   return new Dict(v);
 }

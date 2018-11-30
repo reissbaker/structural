@@ -10,7 +10,7 @@ type UnwrappedCheckStruct<T extends CheckStruct> = {
   [P in keyof T]: GetType<T[P]>;
 };
 
-export default class Struct<T extends CheckStruct> extends Check<UnwrappedCheckStruct<T>> {
+export class Struct<T extends CheckStruct> extends Check<UnwrappedCheckStruct<T>> {
   private definition: T;
   private exact: boolean;
 
@@ -22,6 +22,7 @@ export default class Struct<T extends CheckStruct> extends Check<UnwrappedCheckS
 
   check(val: any): Result<UnwrappedCheckStruct<T>> {
     if(typeof val !== 'object') return new Err(`${val} is not an object`);
+    if(val === null) return new Err(`${val} is null`);
 
     const errs: string[] = [];
     for(const prop in val) {

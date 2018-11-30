@@ -14,6 +14,6 @@ export class TypeOf<T> extends Check<T> {
   }
 }
 
-export default function typeOf<T>(t: string): TypeOf<T> {
+export function typeOf<T>(t: string): TypeOf<T> {
   return new TypeOf<T>(t);
 }

@@ -19,6 +19,6 @@ export class InstanceOf<T> extends Check<T> {
   }
 }
 
-export default function instanceOf<T>(klass: Constructor<T>): InstanceOf<T> {
+export function instanceOf<T>(klass: Constructor<T>): InstanceOf<T> {
   return new InstanceOf(klass);
 }

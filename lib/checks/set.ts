@@ -19,6 +19,6 @@ export class SetCheck<V> extends Check<Set<V>> {
   }
 }
 
-export default function set<V>(v: Check<V>): SetCheck<V> {
+export function set<V>(v: Check<V>): SetCheck<V> {
   return new SetCheck(v);
 }

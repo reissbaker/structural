@@ -23,6 +23,6 @@ export class Arr<T> extends Check<Array<T>> {
   }
 }
 
-export default function array<T>(check: Check<T>): Arr<T> {
+export function array<T>(check: Check<T>): Arr<T> {
   return new Arr(check);
 }

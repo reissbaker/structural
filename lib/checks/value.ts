@@ -14,6 +14,6 @@ export class Value<T> extends Check<T> {
   }
 }
 
-export default function value<T>(v: T): Value<T> {
+export function value<T>(v: T): Value<T> {
   return new Value(v);
 }

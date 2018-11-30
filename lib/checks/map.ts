@@ -25,6 +25,6 @@ export class MapCheck<K, V> extends Check<Map<K, V>> {
   }
 }
 
-export default function map<K, V>(k: Check<K>, v: Check<V>): MapCheck<K, V> {
+export function map<K, V>(k: Check<K>, v: Check<V>): MapCheck<K, V> {
   return new MapCheck(k, v);
 }

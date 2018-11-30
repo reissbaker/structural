@@ -1,6 +1,6 @@
-import typeOf from "./type-of";
-import instanceOf from "./instance-of";
-import value from "./value";
+import { typeOf } from "./type-of";
+import { instanceOf } from "./instance-of";
+import { value } from "./value";
 
 export const num = typeOf<number>('number');
 export const str = typeOf<string>('string');
