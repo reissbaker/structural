@@ -1,5 +1,5 @@
 {
-  "name": "struktural",
+  "name": "structural",
   "author": "Matt Baker <@reissbaker>",
   "version": "0.0.1",
   "description": "Runtime structural typechecker",
