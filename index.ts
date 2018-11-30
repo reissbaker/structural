@@ -19,20 +19,6 @@ export * from "./lib/checks/any";
 // otherwise your whole build will fail. maybe just have different root dirs.
 
 /*
-const struct = subtype({
-  hi: str,
-  age: num,
-  nested: subtype({
-    cool: bool,
-  }),
-}).assert({
-  hi: "world",
-  age: 5000,
-  nested: {
-    cool: false,
-  }
-});
-
 const maybeBool = nil.or(bool).assert(null);
 
 const dictionary = dict(str.or(num)).assert([ 1, 2, 3 ]);
