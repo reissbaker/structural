@@ -19,3 +19,10 @@ test("rejects non-objects", () => {
     check.assert(null);
   }).toThrow();
 });
+
+test("rejects arrays", () => {
+  const check = t.dict(t.any);
+  expect(() => {
+    check.assert([ ]);
+  }).toThrow();
+});

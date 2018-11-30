@@ -14,6 +14,7 @@ export class Dict<V> extends Check<RawDict<V>> {
 
   check(val: any): Result<RawDict<V>> {
     if(typeof val !== 'object') return new Err(`${val} is not an object`);
+    if(Array.isArray(val)) return new Err(`${val} is an array`);
     if(val === null) return new Err(`${val} is null`);
 
     for(const prop in val) {

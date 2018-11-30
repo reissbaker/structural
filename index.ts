@@ -20,6 +20,4 @@ export * from "./lib/checks/any";
 
 /*
 const maybeBool = nil.or(bool).assert(null);
-
-const dictionary = dict(str.or(num)).assert([ 1, 2, 3 ]);
 */
