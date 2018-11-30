@@ -1,0 +1,15 @@
+{
+  "name": "struktural",
+  "author": "Matt Baker <@reissbaker>",
+  "version": "0.0.1",
+  "description": "Runtime structural typechecker",
+  "main": "build/index.js",
+  "license": "MIT",
+  "scripts": {
+    "tsc": "node_modules/.bin/tsc",
+    "watch": "node_modules/.bin/tsc --watch"
+  },
+  "devDependencies": {
+    "typescript": "^3.1.6"
+  }
+}
