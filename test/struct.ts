@@ -31,6 +31,13 @@ describe("subtype", () => {
       check.assert(null);
     }).toThrow();
   });
+
+  test("rejects arrays", () => {
+    const check = t.subtype({});
+    expect(() => {
+      check.assert([]);
+    }).toThrow();
+  });
 });
 
 describe("exact", () => {
@@ -64,6 +71,13 @@ describe("exact", () => {
     const check = t.exact({});
     expect(() => {
       check.assert(null);
+    }).toThrow();
+  });
+
+  test("rejects arrays", () => {
+    const check = t.exact({});
+    expect(() => {
+      check.assert([]);
     }).toThrow();
   });
 });
