@@ -35,12 +35,28 @@ describe("and", () => {
     });
   });
 
-  test("rejects values that don't pass both of the checks", () => {
+  test("rejects values that don't pass the first check", () => {
+    const check = t.subtype({ hi: t.str }).and(t.subtype({ foo: t.str }));
+    expect(() => {
+      check.assert({
+        foo: "bar",
+      });
+    }).toThrow();
+  });
+
+  test("rejects values that don't pass the second check", () => {
     const check = t.subtype({ hi: t.str }).and(t.subtype({ foo: t.str }));
     expect(() => {
       check.assert({
         hi: "world",
       });
+    }).toThrow();
+  });
+
+  test("rejects values that pass neither of the checks", () => {
+    const check = t.subtype({ hi: t.str }).and(t.subtype({ foo: t.str }));
+    expect(() => {
+      check.assert({});
     }).toThrow();
   });
 });
