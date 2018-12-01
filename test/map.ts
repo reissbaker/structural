@@ -29,3 +29,10 @@ test("rejects maps where values mismatch", () => {
     check.assert(map);
   }).toThrow();
 });
+
+test("rejects non-maps", () => {
+  const check = t.map(t.any, t.any);
+  expect(() => {
+    check.assert(null);
+  }).toThrow();
+});

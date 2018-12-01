@@ -21,3 +21,10 @@ test("rejects sets with non-matching values", () => {
     check.assert(set);
   }).toThrow();
 });
+
+test("rejects non-sets", () => {
+  const check = t.set(t.any);
+  expect(() => {
+    check.assert(null);
+  }).toThrow();
+});
