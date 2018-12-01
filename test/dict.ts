@@ -13,7 +13,23 @@ test("accepts dictionaries with matching values", () => {
   });
 });
 
+test("rejects dictionaries with non-matching values", () => {
+  const check = t.dict(t.str);
+  expect(() => {
+    check.assert({
+      world: 5,
+    });
+  }).toThrow();
+});
+
 test("rejects non-objects", () => {
+  const check = t.dict(t.any);
+  expect(() => {
+    check.assert(true);
+  }).toThrow();
+});
+
+test("rejects null", () => {
   const check = t.dict(t.any);
   expect(() => {
     check.assert(null);
