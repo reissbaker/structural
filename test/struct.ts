@@ -25,7 +25,24 @@ describe("subtype", () => {
     }).toThrow();
   });
 
+  test("rejects non-matching values", () => {
+    const check = t.subtype({
+      hi: t.str,
+    });
+
+    expect(() => {
+      check.assert({ hi: 5 });
+    }).toThrow();
+  });
+
   test("rejects non-objects", () => {
+    const check = t.subtype({});
+    expect(() => {
+      check.assert(false);
+    }).toThrow();
+  });
+
+  test("rejects null", () => {
     const check = t.subtype({});
     expect(() => {
       check.assert(null);
