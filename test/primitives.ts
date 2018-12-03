@@ -116,3 +116,22 @@ describe("maybe", () => {
     }).toThrow();
   });
 });
+
+describe("optional", () => {
+  test("accepts the matching value", () => {
+    const check = t.optional(t.num);
+    check.assert(5);
+  });
+
+  test("accepts undefined", () => {
+    const check = t.optional(t.num);
+    check.assert(undefined);
+  });
+
+  test("rejects non-matching values", () => {
+    const check = t.optional(t.num);
+    expect(() => {
+      check.assert(true);
+    }).toThrow();
+  });
+});

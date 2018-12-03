@@ -14,3 +14,7 @@ export const obj = typeOf<Object>('object');
 export function maybe<T>(check: Check<T>): Check<T|null> {
   return check.or(nil);
 }
+
+export function optional<T>(check: Check<T>): Check<T|undefined> {
+  return check.or(undef);
+}
