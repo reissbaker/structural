@@ -14,9 +14,10 @@ to do one of the following:
 Structural allows you to skip writing out lengthy validation code, instead
 encoding validation into types defined in TypeScript or JavaScript, which are
 less verbose to write and can live inside the same source files as the rest of
-your code. Structural supports advanced type system features like generics and
-algebraic data types to keep your code extremely concise, and is null-safe: if
-you say something is a string, it will never be `null` or `undefined`.
+your code. Structural supports advanced type system features like generics,
+structural subtyping, and algebraic data types to keep your code extremely
+concise, and is null-safe: if you say something is a string, it will never be
+`null` or `undefined`.
 
 Here's a simple example:
 
