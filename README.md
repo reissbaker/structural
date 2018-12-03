@@ -58,6 +58,12 @@ try {
 // For TypeScript users, you can get a reference to the inferred
 // type for Interns using the following type helper:
 type UserType = t.GetType<typeof User>;
+
+// This allows you to write typed function that operate on users
+// like so:
+function update(user: UserType) {
+  // ...
+}
 ```
 
 Let's compare the User validation code to the equivalent JSON Schema:
@@ -72,8 +78,8 @@ const User = t.subtype({
 });
 ```
 
-And you're done. And for TypeScript users, you'll never need to write the type
-out again in the rest of your code: it's automatically inferred.
+And in six lines, you're done. And for TypeScript users, you'll never need to
+write the type out again in the rest of your code: it's automatically inferred.
 
 #### JSON Schema:
 ```
@@ -103,8 +109,10 @@ out again in the rest of your code: it's automatically inferred.
 }
 ```
 
-And for TypeScript users, JSON Schema is even worse! You'll also need the
-following redundant type declaration somewhere in your source files:
+Clocking in at 23 lines of code, it's nearly 4x more verbose than the
+equivalent Structural validation. And for TypeScript users, JSON Schema is even
+worse! You'll also need the following redundant type declaration somewhere in
+your source files:
 
 ```typescript
 type UserType = {
@@ -114,6 +122,9 @@ type UserType = {
   hirable: boolean,
 }
 ```
+
+And every time you update the JSON Schema, you'll need to keep the type in
+sync, since it can't be inferred at compile time.
 
 ## Advanced type system features
 
