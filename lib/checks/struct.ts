@@ -1,6 +1,6 @@
 import { Err } from "../result";
 import { InexactCheckReturnType, Check, ExactCheck } from "../check";
-import GetType from "../get-type";
+import { GetType } from "../get-type";
 
 type CheckStruct = {
   [key: string]: Check<any>;
