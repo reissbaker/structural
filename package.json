@@ -19,5 +19,15 @@
     "jest": "^23.6.0",
     "ts-jest": "^23.10.5",
     "typescript": "^3.1.6"
-  }
+  },
+  "files": [
+    "index.ts",
+    "package.json",
+    "yarn.lock",
+    "tsconfig.json",
+    "jest.config.js",
+    "/build",
+    "/lib",
+    "/test"
+  ]
 }
