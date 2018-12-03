@@ -46,13 +46,8 @@ export class Struct<T extends CheckStruct> extends ExactCheck<UnwrappedCheckStru
   private checkFields(val: any): string[] {
     const errs: string[] = [];
     for(const prop in this.definition) {
-      if(val.hasOwnProperty(prop)) {
-        const result = this.definition[prop].check(val[prop]);
-        if(result instanceof Err) errs.push(result.message);
-      }
-      else {
-        errs.push(`Missing key ${prop} in ${val}`);
-      }
+      const result = this.definition[prop].check(val[prop]);
+      if(result instanceof Err) errs.push(result.message);
     }
 
     return errs;

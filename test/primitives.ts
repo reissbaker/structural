@@ -134,4 +134,13 @@ describe("optional", () => {
       check.assert(true);
     }).toThrow();
   });
+
+  test("allows partial definition in structs", () => {
+    const check = t.subtype({
+      hi: t.optional(t.str),
+      foo: t.str,
+    });
+
+    check.assert({ foo: "bar" });
+  });
 });
