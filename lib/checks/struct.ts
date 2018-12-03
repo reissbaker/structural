@@ -1,4 +1,4 @@
-import { Err, Result } from "../result";
+import { Err } from "../result";
 import { InexactCheckReturnType, Check, ExactCheck } from "../check";
 import GetType from "../get-type";
 
