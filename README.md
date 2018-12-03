@@ -1,4 +1,4 @@
-## structural
+## Structural
 
 Structural is a runtime type checker for JavaScript and TypeScript that allows
 you to run type-checking code on data you only have access to at runtime, such
@@ -56,7 +56,7 @@ try {
 }
 
 // For TypeScript users, you can get a reference to the inferred
-// type for Interns using the following type helper:
+// type for Users using the following type helper:
 type UserType = t.GetType<typeof User>;
 
 // This allows you to write typed function that operate on users
