@@ -1,5 +1,5 @@
 import { Err, Result } from "../result";
-import { Check } from "../check";
+import { InexactCheckReturnType, Check, ExactCheck } from "../check";
 import GetType from "../get-type";
 
 type CheckStruct = {
@@ -10,7 +10,7 @@ type UnwrappedCheckStruct<T extends CheckStruct> = {
   [P in keyof T]: GetType<T[P]>;
 };
 
-export class Struct<T extends CheckStruct> extends Check<UnwrappedCheckStruct<T>> {
+export class Struct<T extends CheckStruct> extends ExactCheck<UnwrappedCheckStruct<T>> {
   private definition: T;
   private exact: boolean;
 
@@ -20,11 +20,30 @@ export class Struct<T extends CheckStruct> extends Check<UnwrappedCheckStruct<T>
     this.exact = exact;
   }
 
-  check(val: any): Result<UnwrappedCheckStruct<T>> {
+  inexactCheck(val: any): InexactCheckReturnType<UnwrappedCheckStruct<T>> {
+    const typeErr = this.checkType(val);
+    if(typeErr) return typeErr;
+
+    const errs = this.checkFields(val);
+
+    if(errs.length === 0) {
+      return {
+        val: val as UnwrappedCheckStruct<T>,
+        allowedKeys: Object.keys(this.definition),
+        exact: this.exact,
+      }
+    }
+
+    return new Err(`${val} failed the following checks:\n${errs.join('\n')}`);
+  }
+
+  private checkType(val: any): Err<UnwrappedCheckStruct<T>> | undefined {
     if(typeof val !== 'object') return new Err(`${val} is not an object`);
     if(Array.isArray(val)) return new Err(`${val} is an array`);
     if(val === null) return new Err(`${val} is null`);
+  }
 
+  private checkFields(val: any): string[] {
     const errs: string[] = [];
     for(const prop in this.definition) {
       if(val.hasOwnProperty(prop)) {
@@ -36,23 +55,16 @@ export class Struct<T extends CheckStruct> extends Check<UnwrappedCheckStruct<T>
       }
     }
 
-    if(this.exact) {
-      for(const prop in val) {
-        if(!this.definition.hasOwnProperty(prop)) {
-          errs.push(`Unknown key ${prop} in ${val}`);
-        }
-      }
-    }
-
-    if(errs.length === 0) return val as UnwrappedCheckStruct<T>;
-    return new Err(`${val} failed the following checks:\n${errs.join('\n')}`);
+    return errs;
   }
 }
 
-export function subtype<T extends CheckStruct>(def: T): Struct<T> {
+type HiddenStruct<T extends CheckStruct> = Check<UnwrappedCheckStruct<T>>;
+
+export function subtype<T extends CheckStruct>(def: T): HiddenStruct<T> {
   return new Struct(def, false);
 }
 
-export function exact<T extends CheckStruct>(def: T): Struct<T> {
+export function exact<T extends CheckStruct>(def: T): HiddenStruct<T> {
   return new Struct(def, true);
 }

@@ -20,18 +20,103 @@ describe("or", () => {
     check.assert("hi");
     check.assert(true);
   });
+
+  test("preserves exactness on the side that is exact", () => {
+    const check = t.exact({ hi: t.str }).or(t.subtype({ hello: t.str }));
+    expect(() => {
+      check.assert({
+        hi: "world",
+        extra: "uh oh",
+      });
+    }).toThrow();
+
+    check.assert({
+      hello: "world",
+      extra: "ok",
+    });
+  });
 });
 
 describe("and", () => {
   test("accepts values that pass both of the checks", () => {
-    // TODO: this should pass with exact types!! but, it doesn't. fix that.
-    // Intersect and Either types could be made aware of exactness, and automatically transform any
-    // exacts into subtypes, and do special exactness checks on their own outside of the struct.
-    // they'd also need to be aware of themselves, since they're taking on exactness responsibility.
     const check = t.subtype({ hi: t.str }).and(t.subtype({ foo: t.str }));
     check.assert({
       hi: "world",
       foo: "bar",
+    });
+  });
+
+  test("accepts values that pass both of the checks with subtype behavior", () => {
+    const check = t.subtype({ hi: t.str }).and(t.subtype({ foo: t.str }));
+    check.assert({
+      hi: "world",
+      foo: "bar",
+      extra: "ok",
+    });
+  });
+
+  test("accepts values that pass both of the checks with exact types", () => {
+    const check = t.exact({ hi: t.str }).and(t.exact({ foo: t.str }));
+    check.assert({
+      hi: "world",
+      foo: "bar",
+    });
+  });
+
+  test("preserves exactness if both sides are exact", () => {
+    const check = t.exact({ hi: t.str }).and(t.exact({ foo: t.str }));
+    expect(() => {
+      check.assert({
+        hi: "world",
+        foo: "bar",
+        extra: "uh oh",
+      });
+    }).toThrow();
+  });
+
+  test("does not preserve exactness if the left side is inexact", () => {
+    const check = t.subtype({ hi: t.str }).and(t.exact({ foo: t.str }));
+    check.assert({
+      hi: "world",
+      foo: "bar",
+      extra: "uh oh",
+    });
+  });
+
+  test("does not preserve exactness if the right side is inexact", () => {
+    const check = t.exact({ hi: t.str }).and(t.subtype({ foo: t.str }));
+    check.assert({
+      hi: "world",
+      foo: "bar",
+      extra: "uh oh",
+    });
+  });
+
+  test("preserves exactness through .or calls", () => {
+    const check = t.exact({ hi: t.str }).and(
+      t.exact({ foo: t.str }).or(t.subtype({ test: t.str }))
+    );
+
+    // should pass: exact match
+    check.assert({
+      hi: "world",
+      foo: "bar",
+    });
+
+    // should fail: two exacts and-ed together
+    expect(() => {
+      check.assert({
+        hi: "world",
+        foo: "bar",
+        extra: "uh oh",
+      });
+    }).toThrow();
+
+    // should pass: exact and subtype and-ed together
+    check.assert({
+      hi: "world",
+      test: "bar",
+      extra: "ok",
     });
   });
 
