@@ -1,24 +1,24 @@
 import { Err, Result } from "../result";
-import { Check } from "../check";
+import { Type } from "../type";
 
-export class SetCheck<V> extends Check<Set<V>> {
-  private valueCheck: Check<V>;
+export class SetType<V> extends Type<Set<V>> {
+  private valueType: Type<V>;
 
-  constructor(v: Check<V>) {
+  constructor(v: Type<V>) {
     super();
-    this.valueCheck = v;
+    this.valueType = v;
   }
 
   check(val: any): Result<Set<V>> {
     if(!(val instanceof Set)) return new Err(`${val} is not an instance of Set`);
     for(const v of val) {
-      const result = this.valueCheck.check(v);
+      const result = this.valueType.check(v);
       if(result instanceof Err) return new Err(`{val} failed set check on value ${v}: ${result.message}`);
     }
     return val as Set<V>;
   }
 }
 
-export function set<V>(v: Check<V>): SetCheck<V> {
-  return new SetCheck(v);
+export function set<V>(v: Type<V>): SetType<V> {
+  return new SetType(v);
 }

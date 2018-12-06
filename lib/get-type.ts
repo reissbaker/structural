@@ -1,3 +1,3 @@
-import { Check } from "./check";
+import { Type } from "./type";
 
-export type GetType<T> = T extends Check<infer U> ? U : never;
+export type GetType<T> = T extends Type<infer U> ? U : never;

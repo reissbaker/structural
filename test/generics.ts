@@ -1,35 +1,35 @@
 import * as t from "..";
 
 test("functions act as generics", () => {
-  function genericStruct<T>(u: t.Check<T>) {
+  function genericStruct<T>(u: t.Type<T>) {
     return t.subtype({
       hi: t.str,
       foo: u,
     });
   }
 
-  const strCheck = genericStruct(t.str);
-  const numCheck = genericStruct(t.num);
+  const strType = genericStruct(t.str);
+  const numType = genericStruct(t.num);
 
-  strCheck.assert({
+  strType.assert({
     hi: "world",
     foo: "baz",
   });
 
-  numCheck.assert({
+  numType.assert({
     hi: "world",
     foo: 5,
   });
 
   expect(() => {
-    strCheck.assert({
+    strType.assert({
       hi: "world",
       foo: 5,
     });
   }).toThrow();
 
   expect(() => {
-    numCheck.assert({
+    numType.assert({
       hi: "world",
       foo: "baz",
     });

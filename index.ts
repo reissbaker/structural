@@ -1,5 +1,5 @@
 export * from "./lib/result";
-export * from "./lib/check";
+export * from "./lib/type";
 export * from "./lib/get-type";
 
 export * from "./lib/checks/type-of";

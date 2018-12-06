@@ -1,11 +1,11 @@
 import { Err, Result } from "../result";
-import { Check } from "../check";
+import { Type } from "../type";
 
 interface Constructor<T> {
   new (...args: Array<any>): T;
 }
 
-export class InstanceOf<T> extends Check<T> {
+export class InstanceOf<T> extends Type<T> {
   private klass: Constructor<T>;
 
   constructor(klass: Constructor<T>) {

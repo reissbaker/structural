@@ -1,7 +1,7 @@
 import { Err, Result } from "../result";
-import { Check } from "../check";
+import { Type } from "../type";
 
-export class TypeOf<T> extends Check<T> {
+export class TypeOf<T> extends Type<T> {
   private typestring: string;
   constructor(t: string) {
     super();

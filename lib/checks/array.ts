@@ -1,19 +1,19 @@
 import { Err, Result } from "../result";
-import { Check } from "../check";
+import { Type } from "../type";
 
-export class Arr<T> extends Check<Array<T>> {
-  private elementCheck: Check<T>;
+export class Arr<T> extends Type<Array<T>> {
+  private elementType: Type<T>;
 
-  constructor(check: Check<T>) {
+  constructor(t: Type<T>) {
     super();
-    this.elementCheck = check;
+    this.elementType = t;
   }
 
   check(val: any): Result<Array<T>> {
     if(!Array.isArray(val)) return new Err(`${val} is not an array`);
 
     for(const el of val) {
-      const result = this.elementCheck.check(el);
+      const result = this.elementType.check(el);
       // Don't bother collecting all errors in an array: for long arrays this is very obnoxious
       if(result instanceof Err) return new Err(result.message);
     }
@@ -23,6 +23,6 @@ export class Arr<T> extends Check<Array<T>> {
   }
 }
 
-export function array<T>(check: Check<T>): Arr<T> {
-  return new Arr(check);
+export function array<T>(t: Type<T>): Arr<T> {
+  return new Arr(t);
 }

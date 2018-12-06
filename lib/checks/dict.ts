@@ -1,15 +1,15 @@
 import { Err, Result } from "../result";
-import { Check } from "../check";
+import { Type } from "../type";
 
 type RawDict<V> = {
   [key: string]: V;
 };
 
-export class Dict<V> extends Check<RawDict<V>> {
-  private valueCheck: Check<V>;
-  constructor(v: Check<V>) {
+export class Dict<V> extends Type<RawDict<V>> {
+  private valueType: Type<V>;
+  constructor(v: Type<V>) {
     super();
-    this.valueCheck = v;
+    this.valueType = v;
   }
 
   check(val: any): Result<RawDict<V>> {
@@ -18,7 +18,7 @@ export class Dict<V> extends Check<RawDict<V>> {
     if(val === null) return new Err(`${val} is null`);
 
     for(const prop in val) {
-      const result = this.valueCheck.check(val[prop]);
+      const result = this.valueType.check(val[prop]);
       if(result instanceof Err) return new Err(`[${prop}]: ${result.message}`);
     }
 
@@ -26,6 +26,6 @@ export class Dict<V> extends Check<RawDict<V>> {
   }
 }
 
-export function dict<V>(v: Check<V>): Dict<V> {
+export function dict<V>(v: Type<V>): Dict<V> {
   return new Dict(v);
 }

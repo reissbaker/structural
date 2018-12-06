@@ -1,7 +1,7 @@
 import { Err, Result } from "../result";
-import { Check } from "../check";
+import { Type } from "../type";
 
-export class Any extends Check<any> {
+export class Any extends Type<any> {
   check(val: any): Result<any> {
     return val;
   }

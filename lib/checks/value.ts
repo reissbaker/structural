@@ -1,7 +1,7 @@
 import { Err, Result } from "../result";
-import { Check } from "../check";
+import { Type } from "../type";
 
-export class Value<T> extends Check<T> {
+export class Value<T> extends Type<T> {
   private val: T;
   constructor(v: T) {
     super();

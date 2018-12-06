@@ -1,4 +1,4 @@
-import { Check } from "../check";
+import { Type } from "../type";
 import { typeOf } from "./type-of";
 import { value } from "./value";
 
@@ -11,10 +11,10 @@ export const undef = typeOf<undefined>('undefined');
 export const nil = value<null>(null);
 export const obj = typeOf<Object>('object');
 
-export function maybe<T>(check: Check<T>): Check<T|null> {
+export function maybe<T>(check: Type<T>): Type<T|null> {
   return check.or(nil);
 }
 
-export function optional<T>(check: Check<T>): Check<T|undefined> {
+export function optional<T>(check: Type<T>): Type<T|undefined> {
   return check.or(undef);
 }
