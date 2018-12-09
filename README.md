@@ -242,3 +242,56 @@ care about a few fields, and then intend to store the returned data. With
 `assert`, you'd store the entire returned object, which would waste space in
 your data store; with `slice`, you'll only end up storing the data you care
 about.
+
+The `slice` method exists on all types, even ones without keys, so you can
+safely drop it in to replace `assert` calls. For types that don't have keys,
+like `t.num`, `slice` is an alias to `assert`; similarly, for types that may
+have keys but don't track them in the type, like `t.obj` (which accepts any
+object), `slice` is also an alias to `assert` since we don't know which keys to
+slice out.
+
+Call to `slice` work even through the algebraic types created with `.and` and
+`.or`; for example:
+
+```typescript
+import * as t from "structural";
+
+const Person = t.subtype({
+  name: t.str,
+});
+
+const HasJob = t.subtype({
+  employer: t.str,
+  job: t.subtype({
+    role: t.str,
+  }),
+});
+
+const HasSchool = t.subtype({
+  school: t.str,
+});
+
+const Intern = Person.and(HasJob).and(HasSchool);
+
+const sliced = Intern.slice({
+  name: "Jenkins",
+  employer: "Mr. Walburn",
+  job: {
+    role: "Coffee fetcher",
+  },
+  alive: false,
+});
+
+/*
+The contents of `sliced` are:
+
+    {
+      name: "Jenkins",
+      employer: "Mr. Walburn",
+      job: {
+        role: "Coffee fetcher",
+      },
+    }
+
+because `alive` wasn't defined in the Intern type.
+```
