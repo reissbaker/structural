@@ -35,6 +35,18 @@ describe("or", () => {
       extra: "ok",
     });
   });
+
+  test("preserves slicing behavior on the side that is key-tracking", () => {
+    const check = t.subtype({ hi: t.str }).or(t.num);
+    expect(check.slice({
+      hi: "world",
+      extra: "sliced",
+    })).toEqual({
+      hi: "world",
+    });
+
+    expect(check.slice(10)).toEqual(10);
+  });
 });
 
 describe("and", () => {
@@ -117,6 +129,97 @@ describe("and", () => {
       hi: "world",
       test: "bar",
       extra: "ok",
+    });
+  });
+
+  test("preserves exactness through other .and calls", () => {
+    const check = t.exact({ hi: t.str }).and(
+      t.exact({ foo: t.str }).and(t.exact({ test: t.str }))
+    );
+
+    // should pass: exact match
+    check.assert({
+      hi: "world",
+      foo: "bar",
+      test: "test",
+    });
+
+    // should fail: exacts and-ed together
+    expect(() => {
+      check.assert({
+        hi: "world",
+        foo: "bar",
+        test: "test",
+        extra: "uh oh",
+      });
+    }).toThrow();
+  });
+
+  test("preserves inexactness through other .and calls", () => {
+    let check = t.exact({ hi: t.str }).and(
+      t.exact({ foo: t.str }).and(t.subtype({ test: t.str }))
+    );
+
+    // should pass: exacts and subtypes and-ed together
+    check.assert({
+      hi: "world",
+      foo: "bar",
+      test: "test",
+      extra: "uh oh",
+    });
+  });
+
+  test("works with non-keyed types", () => {
+    const check = t.num.and(t.value(5));
+    check.assert(5);
+    expect(() => {
+      check.assert(6);
+    }).toThrow();
+  });
+
+  test("preserves key slicing behavior of structs", () => {
+    const check = t.subtype({ hi: t.str }).and(t.subtype({ foo: t.str }));
+    expect(check.slice({
+      hi: "world",
+      foo: "bar",
+      extra: "sliced",
+    })).toEqual({
+      hi: "world",
+      foo: "bar",
+    });
+  });
+
+  test("fails on slices that fail exactness checking", () => {
+    const check = t.exact({ hi: t.str }).and(t.exact({ foo: t.str }));
+    expect(check.slice({
+      hi: "world",
+      foo: "bar",
+    })).toEqual({
+      hi: "world",
+      foo: "bar",
+    });
+
+    expect(() => {
+      check.slice({
+        hi: "world",
+        foo: "bar",
+        extra: "explode",
+      });
+    }).toThrow();
+  });
+
+  test("preserves slicing behavior through or calls", () => {
+    const check = t.subtype({ hi: t.str }).and(
+      t.subtype({ foo: t.str }).or(t.subtype({ test: t.str }))
+    );
+
+    expect(check.slice({
+      hi: "world",
+      test: "test",
+      extra: "sliced",
+    })).toEqual({
+      hi: "world",
+      test: "test",
     });
   });
 

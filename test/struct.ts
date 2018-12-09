@@ -98,3 +98,28 @@ describe("exact", () => {
     }).toThrow();
   });
 });
+
+describe('slice', () => {
+  test('slices out only the known keys', () => {
+    const check = t.subtype({
+      foo: t.str,
+    });
+
+    expect(check.slice({
+      foo: "bar",
+      hello: "world",
+    })).toEqual({
+      foo: "bar",
+    });
+  });
+
+  test('throws errors when the type mismatches', () => {
+    const check = t.subtype({
+      foo: t.str,
+    });
+
+    expect(() => {
+      check.slice({});
+    }).toThrow();
+  });
+});

@@ -1,5 +1,5 @@
 import { Err } from "../result";
-import { InexactCheckReturnType, Type, ExactType } from "../type";
+import { InexactCheckReturnType, Type, KeyTrackingType } from "../type";
 import { GetType } from "../get-type";
 
 type TypeStruct = {
@@ -10,7 +10,7 @@ type UnwrappedTypeStruct<T extends TypeStruct> = {
   [P in keyof T]: GetType<T[P]>;
 };
 
-export class Struct<T extends TypeStruct> extends ExactType<UnwrappedTypeStruct<T>> {
+export class Struct<T extends TypeStruct> extends KeyTrackingType<UnwrappedTypeStruct<T>> {
   private definition: T;
   private exact: boolean;
 
@@ -29,7 +29,7 @@ export class Struct<T extends TypeStruct> extends ExactType<UnwrappedTypeStruct<
     if(errs.length === 0) {
       return {
         val: val as UnwrappedTypeStruct<T>,
-        allowedKeys: Object.keys(this.definition),
+        knownKeys: Object.keys(this.definition),
         exact: this.exact,
       }
     }

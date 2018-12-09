@@ -10,6 +10,10 @@ describe("num", () => {
       t.num.assert("hi");
     }).toThrow();
   });
+
+  test("slice returns the number", () => {
+    expect(t.num.slice(1)).toEqual(1);
+  });
 });
 
 describe("str", () => {
