@@ -1,5 +1,5 @@
 import { Err } from "../result";
-import { InexactCheckReturnType, Type, KeyTrackingType } from "../type";
+import { KeyTrackResult, Type, KeyTrackingType } from "../type";
 import { GetType } from "../get-type";
 
 type TypeStruct = {
@@ -20,7 +20,7 @@ export class Struct<T extends TypeStruct> extends KeyTrackingType<UnwrappedTypeS
     this.exact = exact;
   }
 
-  inexactCheck(val: any): InexactCheckReturnType<UnwrappedTypeStruct<T>> {
+  checkTrackKeys(val: any): KeyTrackResult<UnwrappedTypeStruct<T>> {
     const typeErr = this.checkType(val);
     if(typeErr) return typeErr;
 

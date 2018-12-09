@@ -3,19 +3,19 @@ import { Err, Result } from "./result";
 export abstract class Type<T> {
   abstract check(val: any): Result<T>;
 
-  /*
-   * Default slice implementation just calls `check`. Override this as necessary.
-   */
-  sliceResult(val: any): Result<T> {
-    return this.check(val);
-  }
-
   assert(val: any): T {
     return assert(this.check(val));
   }
 
   slice(val: any): T {
     return assert(this.sliceResult(val));
+  }
+
+  /*
+   * Default slice implementation just calls `check`. Override this as necessary.
+   */
+  sliceResult(val: any): Result<T> {
+    return this.check(val);
   }
 
   and<R>(r: Type<R>): Type<T&R> {
@@ -32,26 +32,26 @@ function assert<T>(result: Result<T>): T {
   return result;
 }
 
-export type InexactCheckSuccess<T> = {
+export type KeyTrack<T> = {
   val: T;
   knownKeys: string[] | null;
   exact: boolean;
 }
-export type InexactCheckReturnType<T> = Err<T> | InexactCheckSuccess<T>;
+export type KeyTrackResult<T> = Err<T> | KeyTrack<T>;
 
 export abstract class KeyTrackingType<T> extends Type<T> {
   check(val: any): Result<T> {
-    const result = this.inexactCheck(val);
+    const result = this.checkTrackKeys(val);
     if(result instanceof Err) return result;
 
     return exactError(val, result) || result.val;
   }
 
 
-  abstract inexactCheck(val: any): InexactCheckReturnType<T>;
+  abstract checkTrackKeys(val: any): KeyTrackResult<T>;
 
   sliceResult(val: any): Result<T> {
-    const result = this.inexactCheck(val);
+    const result = this.checkTrackKeys(val);
     if(result instanceof Err) return result;
 
     const err = exactError(val, result);
@@ -80,10 +80,10 @@ export class Either<L, R> extends KeyTrackingType<L|R> {
     this.r = r;
   }
 
-  inexactCheck(val: any): InexactCheckReturnType<L|R> {
-    const l = inexactCheck(this.l, val);
+  checkTrackKeys(val: any): KeyTrackResult<L|R> {
+    const l = checkTrackKeys(this.l, val);
     if(!(l instanceof Err)) return l;
-    const r = inexactCheck(this.r, val);
+    const r = checkTrackKeys(this.r, val);
     if(!(r instanceof Err)) return r;
     return new Err(`${val} failed the following checks:\n${l.message}\n${r.message}`);
   }
@@ -100,9 +100,9 @@ export class Intersect<L, R> extends KeyTrackingType<L&R> {
     this.r = r;
   }
 
-  inexactCheck(val: any): InexactCheckReturnType<L&R> {
-    const l = inexactCheck(this.l, val);
-    const r = inexactCheck(this.r, val);
+  checkTrackKeys(val: any): KeyTrackResult<L&R> {
+    const l = checkTrackKeys(this.l, val);
+    const r = checkTrackKeys(this.r, val);
 
     if((l instanceof Err) && (r instanceof Err)) {
       return new Err(`${val} failed the following checks:\n${l.message}\n${r.message}`);
@@ -123,9 +123,9 @@ export class Intersect<L, R> extends KeyTrackingType<L&R> {
   }
 }
 
-function inexactCheck<T>(check: Type<T>, val: any): InexactCheckReturnType<T> {
+function checkTrackKeys<T>(check: Type<T>, val: any): KeyTrackResult<T> {
   if(check instanceof KeyTrackingType) {
-    return check.inexactCheck(val);
+    return check.checkTrackKeys(val);
   }
 
   const result = check.check(val);
@@ -138,7 +138,7 @@ function inexactCheck<T>(check: Type<T>, val: any): InexactCheckReturnType<T> {
   };
 }
 
-export function exactError<T>(val: any, result: InexactCheckSuccess<T>): Err<T> | undefined {
+export function exactError<T>(val: any, result: KeyTrack<T>): Err<T> | undefined {
   if(result.exact) {
     const errs = [];
     const allowed = new Set(result.knownKeys);
