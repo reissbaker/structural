@@ -178,3 +178,67 @@ try {
   console.log(`Data ${data} did not match the Intern type`);
 }
 ```
+
+## Slicing keys
+
+By default, `assert` is zero-copy: the data you give it is the data that gets
+returned. This means, for example, if you have the type:
+
+```typescript
+const Person = t.subtype({
+  name: t.str,
+});
+```
+
+And you give it the following data:
+
+```typescript
+const validated = Person.assert({
+  name: "Matt",
+  eyeColor: "green",
+});
+```
+
+Then `validated` will be exactly the data you passed in:
+
+```typescript
+{
+  name: "Matt",
+  eyeColor: "green",
+}
+```
+
+(Although if you're using TypeScript, the type system will rightfully prevent
+you from accessing `eyeColor`, because you didn't declare it as part of the
+type.)
+
+This behavior is useful when you want to preserve the original data that was
+passed in, or if you don't care about preserving it but want to avoid
+unnecessary allocations. If you want to make sure `validated` only contains
+exactly the data described in `Person`, though -- and you don't want to use an
+`exact` type, because you don't want to fail on unknown keys -- Structural also
+provides a `slice` method that is equivalent to `assert`, but makes sure to
+only return data with the known keys described by the type. For example:
+
+```typescript
+const sliced = Person.slice({
+  name: "Matt",
+  eyeColor: "green",
+});
+
+/*
+The contents of `sliced` are:
+
+    {
+      name: "Matt",
+    }
+
+because `eyeColor` was not defined in the Person type
+*/
+```
+
+The `slice` call can be useful when you're calling third-party APIs and only
+care about a few fields, and then intend to store the returned data. With
+`assert`, you'd store the entire returned object, which would waste space in
+your data store; with `slice`, you'll only end up storing the data you care
+about.
