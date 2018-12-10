@@ -152,4 +152,5 @@ export function exactError<T>(val: any, result: KeyTrack<T>): Err<T> | undefined
       return new Err(`${val} failed the following checks:\n${errs.join('\n')}`);
     }
   }
+  return undefined;
 }

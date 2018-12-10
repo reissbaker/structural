@@ -41,6 +41,7 @@ export class Struct<T extends TypeStruct> extends KeyTrackingType<UnwrappedTypeS
     if(typeof val !== 'object') return new Err(`${val} is not an object`);
     if(Array.isArray(val)) return new Err(`${val} is an array`);
     if(val === null) return new Err(`${val} is null`);
+    return undefined;
   }
 
   private checkFields(val: any): string[] {
