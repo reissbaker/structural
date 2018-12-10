@@ -1,13 +1,14 @@
 {
   "name": "structural",
   "author": "Matt Baker <@reissbaker>",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Runtime structural typechecker",
   "repository": {
     "type": "git",
     "url": "https://github.com/reissbaker/structural"
   },
   "main": "build/index.js",
+  "types": "build/index.d.ts",
   "license": "MIT",
   "scripts": {
     "tsc": "rm -rf build/ && node_modules/.bin/tsc",
