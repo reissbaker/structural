@@ -1,4 +1,4 @@
-import { Err, Result } from "../result";
+import { Result } from "../result";
 import { Type } from "../type";
 
 export class Any extends Type<any> {
