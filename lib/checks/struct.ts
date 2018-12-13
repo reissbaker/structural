@@ -11,8 +11,8 @@ type UnwrappedTypeStruct<T extends TypeStruct> = {
 };
 
 export class Struct<T extends TypeStruct> extends KeyTrackingType<UnwrappedTypeStruct<T>> {
-  private definition: T;
-  private exact: boolean;
+  readonly definition: T;
+  readonly exact: boolean;
 
   constructor(definition: T, exact: boolean) {
     super();
