@@ -46,6 +46,24 @@ function assert<T>(result: Result<T>): T {
   return result;
 }
 
+/*
+ * Type operators
+ * -------------------------------------------------------------------------------------------------
+ *
+ * These are types that operate on types, and are exposed in a fluent-style API on all Type objects.
+ * To avoid circular dependency issues with module resolution, we keep them in this file, because
+ * the Type class needs access to them in able to return them, but they also need access to the Type
+ * class in order to extend it (since they themselves are Types).
+ */
+
+
+/*
+ * ### Validation
+ *
+ * A type that runs validation functions and errors if they return false, or passes if they return
+ * true.
+ */
+
 export type Validator<T> = (val: T) => boolean;
 
 export class Validation<T> extends Type<T> {
@@ -68,6 +86,17 @@ export class Validation<T> extends Type<T> {
     return new Err(`Failed validation: ${this.desc}`);
   }
 }
+
+/*
+ * Base key tracking type
+ * -------------------------------------------------------------------------------------------------
+ *
+ * Types that operate on and track specific keys in objects have shared functionality surrounding
+ * keeping track of those keys, making sure that exactness checks are run correctly, and that the
+ * keys are sliced when `.slice` is called. This base class implements that behavior, and provides
+ * an abstract `checkTrackKeys` method as an extension point for subclasses to implement, as opposed
+ * to implementing `check` directly from the base Type class.
+ */
 
 export type KeyTrack<T> = {
   val: T;
@@ -107,6 +136,14 @@ export abstract class KeyTrackingType<T> extends Type<T> {
   }
 }
 
+/*
+ * Either
+ * -------------------------------------------------------------------------------------------------
+ *
+ * A union type. Extends the KeyTrackingType since it may need to track its children's keys, if the
+ * children are themselves doing key tracking.
+ */
+
 export class Either<L, R> extends KeyTrackingType<L|R> {
   private l: Type<L>;
   private r: Type<R>;
@@ -125,6 +162,14 @@ export class Either<L, R> extends KeyTrackingType<L|R> {
     return new Err(`${val} failed the following checks:\n${l.message}\n${r.message}`);
   }
 }
+
+/*
+ * Intersect
+ * -------------------------------------------------------------------------------------------------
+ *
+ * An intersection type. Extends the KeyTrackingType since it may need to track its children's keys,
+ * if the children are themselves doing key tracking.
+ */
 
 export class Intersect<L, R> extends KeyTrackingType<L&R> {
   private l: Type<L>;
