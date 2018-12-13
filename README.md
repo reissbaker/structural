@@ -179,6 +179,23 @@ try {
 }
 ```
 
+## Custom validations
+
+Structural supports writing custom validation functions that check values at
+runtime. Functions should return true if the check passes, and false otherwise.
+
+```typescript
+import * as t;
+
+const NonZeroNumber = t.num.validate(num => num !== 0);
+
+// Passes:
+NonZeroNumber.assert(1);
+
+// Raises an error:
+NonZeroNumber.assert(0);
+```
+
 ## Slicing keys
 
 By default, `assert` is zero-copy: the data you give it is the data that gets

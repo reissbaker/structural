@@ -18,6 +18,11 @@ export abstract class Type<T> {
     return this.check(val);
   }
 
+  /*
+   * Type algebra
+   * -----------------------------------------------------------------------------------------------
+   */
+
   and<R>(r: Type<R>): Type<T&R> {
     return new Intersect(this, r);
   }
@@ -25,11 +30,43 @@ export abstract class Type<T> {
   or<R>(r: Type<R>): Type<T|R> {
     return new Either(this, r);
   }
+
+  /*
+   * Custom validators
+   * -----------------------------------------------------------------------------------------------
+   */
+
+  validate(desc: string, fn: Validator<T>): Type<T> {
+    return this.and(new Validation(desc, fn));
+  }
 }
 
 function assert<T>(result: Result<T>): T {
   if(result instanceof Err) throw result.toError();
   return result;
+}
+
+export type Validator<T> = (val: T) => boolean;
+
+export class Validation<T> extends Type<T> {
+  private readonly desc: string;
+  private readonly validator: Validator<T>;
+
+  constructor(desc: string, fn: Validator<T>) {
+    super();
+    this.desc = desc;
+    this.validator = fn;
+  }
+
+  check(val: any): Result<T> {
+    try {
+      if(this.validator(val)) return val;
+    } catch(e) {
+      return new Err(`Validation \`${this.desc}\` threw an error: ${e}`);
+    }
+
+    return new Err(`Failed validation: ${this.desc}`);
+  }
 }
 
 export type KeyTrack<T> = {

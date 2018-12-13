@@ -1,7 +1,15 @@
 {
-  // Ignore the inference tests, which may intentionally fail
+  "include": [
+    "*.ts",
+  ],
+
   "exclude": [
+    // Ignore the inference tests, which may intentionally fail
     "./inference-test/**/*",
+    // Ignore the build directory
+    "./build",
+    // Don't watch node_modules
+    "./node_modules",
   ],
 
   "compilerOptions": {

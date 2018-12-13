@@ -12,7 +12,7 @@
   "license": "MIT",
   "scripts": {
     "tsc": "rm -rf build/ && node_modules/.bin/tsc",
-    "watch": "node_modules/.bin/tsc --watch",
+    "watch": "rm -rf build/ && node_modules/.bin/tsc --watch",
     "test": "jest --coverage"
   },
   "devDependencies": {
