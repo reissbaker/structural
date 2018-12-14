@@ -1,6 +1,12 @@
 import * as t from "..";
 
 test("allows type narrowing for exhaustiveness checking", () => {
+  // Let's write a function that takes a validation, and see if we can use type narrowing with
+  // successive `if` statements to get ourselves to be able to call this function on a `t.Kind`.
+  const takesValidation = (v: t.Validation<any>) => {
+    return v;
+  };
+
   const fn = (u: t.Kind) => {
     if(u instanceof t.Any) {
       return "any";
@@ -35,14 +41,15 @@ test("allows type narrowing for exhaustiveness checking", () => {
     if(u instanceof t.Intersect) {
       return "intersect";
     }
-    else {
-      // this should compile, because we've narrowed the type to just Validation.
-      // this also allows us to do exhaustiveness checking: if we haven't enumerated every possible
-      // option before this, this will fail compilation, since `u` could be one of the classes we
-      // haven't enumerated.
-      const v: t.Validation<any> = u;
-      return `validation: ${v}`;
-    }
+
+    // This should compile even though we never ran `if(u instanceof Validation)`, because we've
+    // narrowed the type to just Validation by checking for everything else that `Kind` could be.
+    //
+    // This also allows us to do exhaustiveness checking: if we haven't enumerated every possible
+    // option before this, this will fail compilation, since `u` could be one of the classes we
+    // haven't enumerated.
+    takesValidation(u);
+    return "validation";
   };
 
   expect(fn(t.any)).toEqual("any");
