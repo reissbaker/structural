@@ -7,6 +7,9 @@ test("allows type narrowing for exhaustiveness checking", () => {
     return v;
   };
 
+  // Now let's write a function that takes a t.Kind, and see if we can narrow it with `if`
+  // statements to a t.Validation, without ever directly checking for `if(u instanceof
+  // t.Validation)`
   const fn = (u: t.Kind) => {
     if(u instanceof t.Any) {
       return "any";
