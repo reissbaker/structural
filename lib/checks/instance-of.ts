@@ -4,7 +4,7 @@ import { Type } from "../type";
 type Constructor<T> = Function & { prototype: T }
 
 export class InstanceOf<T> extends Type<T> {
-  private klass: Constructor<T>;
+  readonly klass: Constructor<T>;
 
   constructor(klass: Constructor<T>) {
     super();

@@ -2,7 +2,7 @@ import { Err, Result } from "../result";
 import { Type } from "../type";
 
 export class SetType<V> extends Type<Set<V>> {
-  private valueType: Type<V>;
+  readonly valueType: Type<V>;
 
   constructor(v: Type<V>) {
     super();

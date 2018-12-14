@@ -2,7 +2,7 @@ import { Err, Result } from "../result";
 import { Type } from "../type";
 
 export class Arr<T> extends Type<Array<T>> {
-  private elementType: Type<T>;
+  readonly elementType: Type<T>;
 
   constructor(t: Type<T>) {
     super();

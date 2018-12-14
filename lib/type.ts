@@ -67,8 +67,8 @@ function assert<T>(result: Result<T>): T {
 export type Validator<T> = (val: T) => boolean;
 
 export class Validation<T> extends Type<T> {
-  private readonly desc: string;
-  private readonly validator: Validator<T>;
+  readonly desc: string;
+  readonly validator: Validator<T>;
 
   constructor(desc: string, fn: Validator<T>) {
     super();
@@ -145,8 +145,8 @@ export abstract class KeyTrackingType<T> extends Type<T> {
  */
 
 export class Either<L, R> extends KeyTrackingType<L|R> {
-  private l: Type<L>;
-  private r: Type<R>;
+  readonly l: Type<L>;
+  readonly r: Type<R>;
 
   constructor(l: Type<L>, r: Type<R>) {
     super();
@@ -172,18 +172,18 @@ export class Either<L, R> extends KeyTrackingType<L|R> {
  */
 
 export class Intersect<L, R> extends KeyTrackingType<L&R> {
-  private l: Type<L>;
-  private r: Type<R>;
+  readonly left: Type<L>;
+  readonly r: Type<R>;
 
   constructor(l: Type<L>, r: Type<R>) {
     super();
 
-    this.l = l;
+    this.left = l;
     this.r = r;
   }
 
   checkTrackKeys(val: any): KeyTrackResult<L&R> {
-    const l = checkTrackKeys(this.l, val);
+    const l = checkTrackKeys(this.left, val);
     const r = checkTrackKeys(this.r, val);
 
     if((l instanceof Err) && (r instanceof Err)) {

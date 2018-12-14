@@ -2,7 +2,7 @@ import { Err, Result } from "../result";
 import { Type } from "../type";
 
 export class TypeOf<T> extends Type<T> {
-  private typestring: string;
+  readonly typestring: string;
   constructor(t: string) {
     super();
     this.typestring = t;

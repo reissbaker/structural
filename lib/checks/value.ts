@@ -2,7 +2,7 @@ import { Err, Result } from "../result";
 import { Type } from "../type";
 
 export class Value<T> extends Type<T> {
-  private val: T;
+  readonly val: T;
   constructor(v: T) {
     super();
     this.val = v;

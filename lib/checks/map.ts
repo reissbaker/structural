@@ -2,8 +2,8 @@ import { Err, Result } from "../result";
 import { Type } from "../type";
 
 export class MapType<K, V> extends Type<Map<K, V>> {
-  private keyType: Type<K>;
-  private valueType: Type<V>;
+  readonly keyType: Type<K>;
+  readonly valueType: Type<V>;
 
   constructor(k: Type<K>, v: Type<V>) {
     super();

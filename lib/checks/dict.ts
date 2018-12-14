@@ -6,7 +6,7 @@ type RawDict<V> = {
 };
 
 export class Dict<V> extends Type<RawDict<V>> {
-  private valueType: Type<V>;
+  readonly valueType: Type<V>;
   constructor(v: Type<V>) {
     super();
     this.valueType = v;
