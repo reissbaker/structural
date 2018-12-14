@@ -12,6 +12,7 @@ export * from "./lib/checks/map";
 export * from "./lib/checks/set";
 export * from "./lib/checks/primitives";
 export * from "./lib/checks/any";
+export * from "./lib/checks/is";
 
 export * from "./lib/kind";
 

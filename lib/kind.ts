@@ -8,6 +8,7 @@ import { Dict } from "./checks/dict";
 import { MapType } from "./checks/map";
 import { SetType } from "./checks/set";
 import { Any } from "./checks/any";
+import { Is } from "./checks/is";
 
 export type Kind = Any
                  | SetType<any>
@@ -21,4 +22,5 @@ export type Kind = Any
                  | Either<any, any>
                  | Intersect<any, any>
                  | Validation<any>
+                 | Is<any>
                  ;
