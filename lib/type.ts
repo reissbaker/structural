@@ -11,6 +11,20 @@ export abstract class Type<T> {
     return assert(this.sliceResult(val));
   }
 
+  /**
+   * Use as a type guard.
+   *
+   * @example
+   *   const FooChecker: t.Type<T> = ...
+   *   if (FooChecker.guard(val)) {
+   *     // in this scope, val has type T
+   *   }
+   */
+  guard(val: any): val is T {
+    const result = this.sliceResult(val);
+    return !(result instanceof Err)
+  }
+
   /*
    * Default slice implementation just calls `check`. Override this as necessary.
    */
