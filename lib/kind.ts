@@ -9,8 +9,10 @@ import { MapType } from "./checks/map";
 import { SetType } from "./checks/set";
 import { Any } from "./checks/any";
 import { Is } from "./checks/is";
+import { Never } from "./checks/never";
 
 export type Kind = Any
+                 | Never
                  | SetType<any>
                  | MapType<any, any>
                  | Dict<any>
