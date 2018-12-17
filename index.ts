@@ -13,6 +13,7 @@ export * from "./lib/checks/set";
 export * from "./lib/checks/primitives";
 export * from "./lib/checks/any";
 export * from "./lib/checks/is";
+export * from "./lib/checks/never";
 
 export * from "./lib/kind";
 

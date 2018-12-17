@@ -47,6 +47,9 @@ test("allows type narrowing for exhaustiveness checking", () => {
     if(u instanceof t.Is) {
       return "is"
     }
+    if (u instanceof t.Never) {
+      return "never"
+    }
 
     // This should compile even though we never ran `if(u instanceof Validation)`, because we've
     // narrowed the type to just Validation by checking for everything else that `Kind` could be.
