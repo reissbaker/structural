@@ -1,6 +1,7 @@
 export * from "./lib/result";
 export * from "./lib/type";
 export * from "./lib/get-type";
+export * from "./lib/match"
 
 export * from "./lib/checks/type-of";
 export * from "./lib/checks/instance-of";
