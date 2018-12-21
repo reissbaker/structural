@@ -10,20 +10,31 @@ test("returns value", () => {
 
 test("enforces exhaustive match", () => {
   const handle = (x: number | string) => {
-    // strange:
-    // :TSDoc on matcher shows this type:
-    // const matcher: t.Switch<number, number, MapFn<number, number> | MapFn<5, number>>
-    const matcher = t.when(t.num, (x: number) => x * x)
+    const matcher = t
       .when(t.value(5 as 5), (x: 5) => x + 1)
+      .when(t.num, (x: number) => x * x)
+      // Try commenting out this arm: compilation will fail if you do
       .when(t.str, x => x.length)
-    // :TSDoc on t.match shows these types inferred:
-    //  function match<string | number, number, MapFn<number, number> | MapFn<5, number>>(val: string | number, cases: t.Switch<string | number, number, MapFn<number, number> | MapFn<5, number>>): number
-    // How can the cases: value be accept `matcher` if matcher has type
-    // Switch<In=number, ...> but cases needs Switch<In=number|string, ...> ??
-    //
-    // matcher.run(x) also fails to compile... so why does t.match(x, matcher) work?
-    // return matcher.run(x)
     return t.match(x, matcher)
   }
-  handle('foo')
+  expect(handle('foo')).toBe(3)
+  expect(handle(5)).toBe(6)
+  expect(handle(2)).toBe(4)
+})
+
+test("throws a type error if none match", () => {
+  class Animal {}
+  class Dog extends Animal {}
+  class Cat extends Animal {}
+  const matcher = t.when(t.str, x => `hello ${x}`)
+                   .when(t.instanceOf(Dog), _ => 'dog')
+                   .when(t.instanceOf(Animal), _ => 'animal')
+
+  expect(t.match(new Dog(), matcher)).toBe('dog')
+  expect(t.match(new Cat(), matcher)).toBe('animal')
+  expect(t.match(new Animal(), matcher)).toBe('animal')
+
+  expect(() => {
+    t.match(5 as any, matcher)
+  }).toThrow();
 })

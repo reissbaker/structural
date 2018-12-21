@@ -1,7 +1,5 @@
 import { Type } from './type'
 
-type MapFn<In, Out> = (x: In) => Out
-
 class Case<In, Out> {
   type: Type<In>
   fn: (x: In) => Out
@@ -49,12 +47,14 @@ export class CaseSwitch<Cases extends Case<any, any>> {
         return c.fn(val)
       }
     }
+    // raise a type error if none of the cases match the value.
     this.accept.assert(val)
+    // satisfy return value checking
     throw "unreachable"
   }
 
   /**
-   * create a new CaseSwitch that also handles the specified case.
+   * Create a new CaseSwitch that also handles the specified case.
    */
   when<In, Out>(type: Type<In>, fn: (v: In) => Out): CaseSwitch<Cases | Case<In, Out>> {
     const c = new Case(type, fn)
@@ -62,41 +62,18 @@ export class CaseSwitch<Cases extends Case<any, any>> {
   }
 }
 
-export class Switch<In, Out, Func extends MapFn<any,any>> {
-  accept: Type<In>
-  arms: Map<Type<In>, Func>
-
-  constructor(type: Type<In>, arms?: Map<Type<In>, Func>) {
-    this.accept = type
-    this.arms = arms ? new Map(arms) : new Map()
-  }
-
-  when<NewIn, NewOut>(type: Type<NewIn>, fn: MapFn<NewIn, NewOut>): Switch<In|NewIn, Out|NewOut, Func|MapFn<NewIn, NewOut>> {
-    const result = new Switch<In |NewIn, Out|NewOut, Func|MapFn<NewIn, NewOut>>(this.accept.or(type), this.arms)
-    result.arms.set(type, fn)
-    return result
-  }
-
-  run(val: In): Out {
-    for (const [type, fn] of this.arms) {
-      if (type.guard(val)) {
-        return fn(val)
-      }
-    }
-    // for JS when types are not guaranteed
-    this.accept.assert(val)
-    throw new Error("unreachable")
-  }
-}
-
-export function when<In, Out>(type: Type<In>, fn: MapFn<In, Out>) {
+/**
+ * Create a type switch that can be used with `match()`.
+ */
+export function when<In, Out>(type: Type<In>, fn: (v: In) => Out) {
   const c = new Case(type, fn)
   return new CaseSwitch([c])
 }
 
 /**
- * Usage:
+ * Match a value against a type switch created with `when()`.
  *
+ * @example
  * const asString = t.match(foo,
  *   t.when(t.array(t.string), xs => xs.join(' and '))
  *    .when(t.string,           s => s))
