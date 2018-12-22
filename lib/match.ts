@@ -22,7 +22,7 @@ export class CaseSwitch<Cases extends Case<any, any>> {
 
   constructor(cases: Cases[]) {
     if (cases.length === 0) {
-      throw new Error("must have at least one ase")
+      throw new Error("must have at least one case")
     }
     this.cases = cases
   }
