@@ -74,9 +74,9 @@ export function when<In, Out>(type: Type<In>, fn: (v: In) => Out) {
  *
  * @example
  * const asString = t.match(foo,
- *   t.when(t.array(t.string), xs => xs.join(' and '))
- *    .when(t.string,           s => s))
- *    .when(t.any,              x => '' + x))
+ *   t.when(t.array(t.str), xs => xs.join(' and '))
+ *    .when(t.str,           s => s)
+ *    .when(t.any,           x => '' + x))
  */
 // export function match<I, O, Cases extends Case<I, O>>(val: I, cases: CaseSwitch<Cases>): O {
 export function match<Cases extends Case<any, any>>(val: InOfCase<Cases>, sw: CaseSwitch<Cases>): OutOfCase<Cases> {
