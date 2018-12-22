@@ -1,5 +1,19 @@
 import * as t from ".."
 
+describe(t.CaseSwitch, () => {
+  test("cannot construct with zero cases", () => {
+    expect(() => {
+      new t.CaseSwitch([])
+    }).toThrow()
+  })
+
+  test("type acceptance is memoized", () => {
+    const matcher = t.when(t.str, () => 'str')
+                     .when(t.num, () => 'num')
+    expect(matcher.accept).toBe(matcher.accept)
+  })
+})
+
 test("returns value", () => {
   expect(
     t.match(

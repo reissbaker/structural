@@ -44,13 +44,12 @@ export class CaseSwitch<Cases extends Case<any, any>> {
   run(val: InOfCase<Cases>): OutOfCase<Cases> {
     for (let c of this.cases) {
       if (c.type.guard(val)) {
-        return c.fn(val)
+        return c.fn(val);
       }
     }
     // raise a type error if none of the cases match the value.
-    this.accept.assert(val)
-    // satisfy return value checking
-    throw "unreachable"
+    this.accept.assert(val);
+    /* istanbul ignore next */ throw "unreachable";
   }
 
   /**
