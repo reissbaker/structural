@@ -37,6 +37,8 @@ export abstract class Type<T> {
     return val;
   }
 
+  abstract toString(): string
+
   /*
    * Default slice implementation just calls `check`. Override this as necessary.
    */
@@ -110,6 +112,10 @@ export class Validation<T> extends Type<T> {
     }
 
     return new Err(`Failed validation: ${this.desc}`);
+  }
+
+  toString() {
+    return `validate(${this.desc}, ${this.validator})`
   }
 }
 
@@ -217,6 +223,10 @@ export class Either<L, R> extends KeyTrackingType<L|R> {
     if(!(r instanceof Err)) return r;
     return new Err(`${val} failed the following checks:\n${l.message}\n${r.message}`);
   }
+
+  toString(): string {
+    return `${this.l} | ${this.r}`
+  }
 }
 
 /*
@@ -258,6 +268,10 @@ export class Intersect<L, R> extends KeyTrackingType<L&R> {
       val: val as L&R,
       exact: l.exact && r.exact,
     }
+  }
+
+  toString() {
+    return `${this.left} & ${this.r}`
   }
 }
 

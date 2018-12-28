@@ -24,6 +24,10 @@ export class Dict<V> extends Type<RawDict<V>> {
 
     return val as Result<RawDict<V>>;
   }
+
+  toString() {
+    return `{ [key: string]: ${this.valueType} }`
+  }
 }
 
 export function dict<V>(v: Type<V>): Dict<V> {

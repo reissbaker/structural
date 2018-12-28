@@ -5,3 +5,7 @@ test("accepts anything", () => {
   t.any.assert("five");
   t.any.assert({});
 });
+
+test("toString", () => {
+  expect(t.any.toString()).toEqual("any")
+})

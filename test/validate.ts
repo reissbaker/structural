@@ -22,3 +22,8 @@ test("fails when the fn throws", () => {
 
   expect(check.check(0)).toBeInstanceOf(t.Err);
 });
+
+test("toString", () => {
+  const check = t.num.validate("big enuf", (val) => val > 5)
+  expect(check.toString()).toEqual("number & validate(big enuf, (val) => val > 5)")
+})

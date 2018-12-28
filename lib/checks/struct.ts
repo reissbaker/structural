@@ -101,6 +101,17 @@ export class Struct<T extends TypeStruct> extends KeyTrackingType<UnwrappedTypeS
 
     return errs;
   }
+
+  toString() {
+    const kvs: string[] = []
+    Object.keys(this.definition).forEach(key => {
+      const value = this.definition[key]
+      const keystr = isOptional(value) ? `${key}?: ` : `${key}: `
+      const valstr = keyType(value).toString()
+      kvs.push(keystr + valstr)
+    })
+    return '{ ' + kvs.join(', ') + ' }'
+  }
 }
 
 type HiddenStruct<T extends TypeStruct> = Type<UnwrappedTypeStruct<T>>;

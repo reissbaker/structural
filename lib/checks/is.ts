@@ -17,6 +17,10 @@ export class Is<T> extends Type<T> {
     if(this.isT(val)) return val;
     return new Err(`${val} is not a ${this.name} (guard failed)`)
   }
+
+  toString() {
+    return `is(${this.name}, ${this.isT})`
+  }
 }
 
 export function is<T>(name: string, guard: Guard<T>) {

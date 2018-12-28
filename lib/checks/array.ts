@@ -21,6 +21,10 @@ export class Arr<T> extends Type<Array<T>> {
     // If we got this far, there were no errors; it's an Array<T>
     return val as Array<T>;
   }
+
+  toString() {
+    return `Array<${this.elementType}>`
+  }
 }
 
 export function array<T>(t: Type<T>): Arr<T> {

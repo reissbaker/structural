@@ -15,6 +15,13 @@ export class InstanceOf<T> extends Type<T> {
     if(val instanceof this.klass) return val;
     return new Err(`${val} is not an instance of ${this.klass}`);
   }
+
+  toString() {
+    if (this.klass.name) {
+      return this.klass.name
+    }
+    return `instanceof ${this.klass}`
+  }
 }
 
 export function instanceOf<T>(klass: Constructor<T>): InstanceOf<T> {

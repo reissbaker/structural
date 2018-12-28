@@ -23,6 +23,10 @@ export class MapType<K, V> extends Type<Map<K, V>> {
 
     return val as Map<K, V>;
   }
+
+  toString() {
+    return `{ [key: ${this.keyType}]: ${this.valueType} }`
+  }
 }
 
 export function map<K, V>(k: Type<K>, v: Type<V>): MapType<K, V> {

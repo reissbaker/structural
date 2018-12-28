@@ -12,3 +12,7 @@ test("accepts nothing", () => {
     t.never.assert({});
   }).toThrow();
 });
+
+test("toString", () => {
+  expect(t.never.toString()).toEqual("never")
+})

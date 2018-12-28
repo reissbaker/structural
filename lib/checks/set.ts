@@ -17,6 +17,10 @@ export class SetType<V> extends Type<Set<V>> {
     }
     return val as Set<V>;
   }
+
+  toString() {
+    return `Set<${this.valueType}>`
+  }
 }
 
 export function set<V>(v: Type<V>): SetType<V> {

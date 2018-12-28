@@ -12,6 +12,10 @@ export class TypeOf<T> extends Type<T> {
     if(typeof val === this.typestring) return val as T;
     return new Err(`${val} is not a ${this.typestring}`);
   }
+
+  toString() {
+    return this.typestring
+  }
 }
 
 export function typeOf<T>(t: string): TypeOf<T> {

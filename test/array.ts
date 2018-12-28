@@ -23,3 +23,7 @@ test("rejects non-arrays", () => {
     check.assert(null);
   }).toThrow();
 });
+
+test("toString", () => {
+  expect(t.array(t.str).toString()).toEqual("Array<string>")
+})

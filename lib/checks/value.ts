@@ -12,6 +12,16 @@ export class Value<T> extends Type<T> {
     if(val === this.val) return val;
     return new Err(`${val} is not equal to ${this.val}`);
   }
+
+  toString() {
+    if (typeof this.val === 'string' ||
+        typeof this.val === 'number' ||
+        this.val === null
+       ) {
+      return JSON.stringify(this.val)
+    }
+    return `=== ${this.val}`
+  }
 }
 
 export function value<T>(v: T): Value<T> {
