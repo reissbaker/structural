@@ -6,7 +6,7 @@ import { GetType } from "../get-type";
  * OptionalKey is a marker type that indicates that the key in a struct that
  * holds an OptionalKey is optional.
  */
-class OptionalKey<T extends Type<any>> {
+export class OptionalKey<T extends Type<any>> {
   type: T
 
   constructor(type: T) {
