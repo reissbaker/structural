@@ -25,6 +25,18 @@ export abstract class Type<T> {
     return !(result instanceof Err)
   }
 
+  /**
+   * Typescript helper that enforces the correct declaration of a value with no
+   * overhead.
+   *
+   * @example
+   * const User = t.subtype({ name: t.str, email: t.str })
+   * const myUser = User.({ dog: 'cow' }) // Typescript compile error
+   */
+  t(val: T): T {
+    return val
+  }
+
   /*
    * Default slice implementation just calls `check`. Override this as necessary.
    */

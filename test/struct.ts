@@ -48,6 +48,15 @@ describe("subtype", () => {
     check.assert(wat)
   })
 
+  test("type inference allows omitting optional keys with .t", () => {
+    const check = t.subtype({
+      email: t.str,
+      name: t.optional(t.str),
+    })
+
+    check.t({ email: 'bob@example.com' })
+  })
+
   test("rejects subtypes", () => {
     const check = t.subtype({
       hi: t.str,
