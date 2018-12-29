@@ -57,6 +57,16 @@ describe("subtype", () => {
     check.t({ email: 'bob@example.com' })
   })
 
+  test("slice omits optional keys that are not defined", () => {
+    const check = t.subtype({
+      email: t.str,
+      name: t.optional(t.str),
+    })
+
+    const result = check.slice({ email: 'bob@example.com' })
+    expect(Object.keys(result)).toEqual(['email'])
+  })
+
   test("rejects subtypes", () => {
     const check = t.subtype({
       hi: t.str,

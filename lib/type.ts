@@ -155,7 +155,12 @@ export abstract class KeyTrackingType<T> extends Type<T> {
     // just the known set of keys.
     const sliced: { [key: string]: any } = {};
     for(const key of result.knownKeys) {
-      sliced[key] = val[key];
+      // only copy keys that exist.
+      // our type-checking already disallows {} fitting { foo: t.undef }
+      // because foo is missing, so this can't produce invalid results.
+      if (key in val) {
+        sliced[key] = val[key];
+      }
     }
 
     return sliced as T;
