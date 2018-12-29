@@ -1,6 +1,7 @@
 import { Err } from "../result";
 import { KeyTrackResult, Type, KeyTrackingType } from "../type";
 import { GetType } from "../get-type";
+const util = require('util')
 
 /**
  * OptionalKey is a marker type that indicates that the key in a struct that
@@ -72,7 +73,7 @@ export class Struct<T extends TypeStruct> extends KeyTrackingType<UnwrappedTypeS
       }
     }
 
-    return new Err(`${val} failed the following checks:\n${errs.join('\n')}`);
+    return new Err(`${util.inspect(val)} failed the following checks:\n${errs.join('\n')}`);
   }
 
   private checkType(val: any): Err<UnwrappedTypeStruct<T>> | undefined {
