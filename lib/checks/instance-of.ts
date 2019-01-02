@@ -1,4 +1,4 @@
-import { Err, Result } from "../result";
+import { Result } from "../result";
 import { Type } from "../type";
 
 type Constructor<T> = Function & { prototype: T }
@@ -13,7 +13,7 @@ export class InstanceOf<T> extends Type<T> {
 
   check(val: any): Result<T> {
     if(val instanceof this.klass) return val;
-    return new Err(`${val} is not an instance of ${this.klass}`);
+    return this.err(() => `not an instance of ${this.klass}`, val);
   }
 
   toString() {

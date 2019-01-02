@@ -13,13 +13,13 @@ export class Dict<V> extends Type<RawDict<V>> {
   }
 
   check(val: any): Result<RawDict<V>> {
-    if(typeof val !== 'object') return new Err(`${val} is not an object`);
-    if(Array.isArray(val)) return new Err(`${val} is an array`);
-    if(val === null) return new Err(`${val} is null`);
+    if(typeof val !== 'object') return this.err(`not an object`, val);
+    if(Array.isArray(val)) return this.err(`is an array`, val);
+    if(val === null) return this.err(`is null`, val);
 
     for(const prop in val) {
       const result = this.valueType.check(val[prop]);
-      if(result instanceof Err) return new Err(`[${prop}]: ${result.message}`);
+      if(result instanceof Err) return Err.lift(result, prop)
     }
 
     return val as Result<RawDict<V>>;

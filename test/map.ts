@@ -38,6 +38,6 @@ test("rejects non-maps", () => {
 });
 
 test("toString", () => {
-  const check = t.map(t.obj, t.obj)
-  expect(check.toString()).toEqual(`{ [key: object]: object }`)
+  const check = t.map(t.obj, t.num)
+  expect(check.toString()).toEqual(`Map<object, number>`)
 })

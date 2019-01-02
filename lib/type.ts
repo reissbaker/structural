@@ -1,14 +1,14 @@
-import { Err, Result } from "./result";
+import { Err, Result, inspect, indent, indentNext } from "./result";
 
 export abstract class Type<T> {
   abstract check(val: any): Result<T>;
 
   assert(val: any): T {
-    return assert(this.check(val));
+    return assert(this.check(val), val);
   }
 
   slice(val: any): T {
-    return assert(this.sliceResult(val));
+    return assert(this.sliceResult(val), val);
   }
 
   /**
@@ -67,10 +67,18 @@ export abstract class Type<T> {
   validate(desc: string, fn: Validator<T>): Type<T> {
     return this.and(new Validation(desc, fn));
   }
-}
 
-function assert<T>(result: Result<T>): T {
-  if(result instanceof Err) throw result.toError();
+  protected err<_>(msg: string | tostr, value: any): Err<_> {
+    return new Err<_>(msg, {
+      value,
+      type: this,
+    })
+  }
+}
+type tostr = () => string
+
+function assert<T>(result: Result<T>, val: any): T {
+  if(result instanceof Err) throw result.toError(val);
   return result;
 }
 
@@ -108,10 +116,10 @@ export class Validation<T> extends Type<T> {
     try {
       if(this.validator(val)) return val;
     } catch(e) {
-      return new Err(`Validation \`${this.desc}\` threw an error: ${e}`);
+      return this.err(`validation error: ${e}`, val);
     }
 
-    return new Err(`Failed validation: ${this.desc}`);
+    return this.err(`failed validation`, val);
   }
 
   toString() {
@@ -165,7 +173,7 @@ export abstract class KeyTrackingType<T> extends Type<T> {
     const result = this.checkTrackKeys(val);
     if(result instanceof Err) return result;
 
-    return exactError(val, result) || result.val;
+    return exactError(val, result, this) || result.val;
   }
 
   /*
@@ -177,7 +185,7 @@ export abstract class KeyTrackingType<T> extends Type<T> {
     const result = this.checkTrackKeys(val);
     if(result instanceof Err) return result;
 
-    const err = exactError(val, result);
+    const err = exactError(val, result, this);
     if(err) return err;
 
     if(result.knownKeys == null) return result.val;
@@ -221,11 +229,56 @@ export class Either<L, R> extends KeyTrackingType<L|R> {
     if(!(l instanceof Err)) return l;
     const r = checkTrackKeys(this.r, val);
     if(!(r instanceof Err)) return r;
-    return new Err(`${val} failed the following checks:\n${l.message}\n${r.message}`);
+
+    let causes: Err<L|R>[] = []
+    if (this.l instanceof Either) {
+      causes = causes.concat(l.causes)
+    } else {
+      causes.push(this.rebase(l, this.l, val))
+    }
+    if (this.r instanceof Either) {
+      causes = causes.concat(r.causes)
+    } else {
+      causes.push(this.rebase(r, this.r, val))
+    }
+
+    const msg = () => {
+      let lines = [`matched none of ${causes.length} types:`]
+      causes.forEach(err => {
+        lines.push(`| ${indentNext('   ', err.type.toString())}`)
+        lines.push(indent('    ', err.message))
+      })
+      return lines.join("\n")
+    }
+
+    const err = this.err(msg, val)
+    err.causes = causes
+    return err
   }
 
   toString(): string {
-    return `${this.l} | ${this.r}`
+    const l = this.l instanceof Intersect ?
+     `(${this.l})` : this.l
+    const r = this.r instanceof Intersect ?
+      `(${this.r})` : this.r
+    return `${l} | ${r}`
+  }
+
+  // "rebase" an error to have the given type. If the error does not have that
+  // type currently, produce a new one with the original error type displayed
+  // in the string and as a cause.
+  //
+  // The messages here will never be converted to a StructuralError. Instead they're
+  // going to be nested into the error returned from this Either.
+  private rebase<_>(err: Err<_>, type: Type<any>, value: any): Err<_> {
+    if (err.type === type && err.path.length === 0) {
+      return err
+    }
+    return new Err<_>(() => err.toString(), {
+      type,
+      value,
+      causes: [err],
+    })
   }
 }
 
@@ -253,7 +306,20 @@ export class Intersect<L, R> extends KeyTrackingType<L&R> {
     const r = checkTrackKeys(this.r, val);
 
     if((l instanceof Err) && (r instanceof Err)) {
-      return new Err(`${val} failed the following checks:\n${l.message}\n${r.message}`);
+      let causes: Err<L&R>[] = []
+      if (this.left instanceof Intersect) {
+        causes = causes.concat(l.causes)
+      } else {
+        causes.push(l)
+      }
+      if (this.r instanceof Intersect) {
+        causes = causes.concat(r.causes)
+      } else {
+        causes.push(r)
+      }
+      const err = this.err(() => `failed checks:\n${causes.join("\n")}`, val)
+      err.causes = causes
+      return err
     }
     if(l instanceof Err) return l;
     if(r instanceof Err) return r;
@@ -271,7 +337,11 @@ export class Intersect<L, R> extends KeyTrackingType<L&R> {
   }
 
   toString() {
-    return `${this.left} & ${this.r}`
+    const l = this.left instanceof Either ?
+     `(${this.left})` : this.left
+    const r = this.r instanceof Either ?
+      `(${this.r})` : this.r
+    return `${l} & ${r}`
   }
 }
 
@@ -302,17 +372,22 @@ function checkTrackKeys<T>(check: Type<T>, val: any): KeyTrackResult<T> {
  * Given a value and a KeyTrack result, either return a nice error message if it fails exactness
  * checking, or return undefined if there is no error.
  */
-export function exactError<T>(val: any, result: KeyTrack<T>): Err<T> | undefined {
-  if(!result.exact) return;
+export function exactError<T>(val: any, result: KeyTrack<T>, t: Type<any>): Err<T> | undefined {
+  if(result.exact) {
+    const errs: string[] = [];
+    const allowed = new Set(result.knownKeys);
+    for(const prop in val) {
+      if(!allowed.has(prop)) {
+        errs.push(`has unknown key \`${inspect(prop)}\``);
+      }
+    }
 
-  const errs = [];
-  const allowed = new Set(result.knownKeys);
-
-  for(const prop in val) {
-    if(!allowed.has(prop)) errs.push(`Unknown key ${prop} in ${val}`);
+    if(errs.length !== 0) {
+      return new Err(() => `failed checks:\n${errs.join('\n')}`, {
+        value: val,
+        type: t,
+      });
+    }
   }
-
-  if(errs.length !== 0) return new Err(`${val} failed the following checks:\n${errs.join('\n')}`);
-
-  return;
+  return undefined
 }

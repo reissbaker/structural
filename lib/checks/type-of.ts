@@ -1,4 +1,4 @@
-import { Err, Result } from "../result";
+import { Result } from "../result";
 import { Type } from "../type";
 
 export class TypeOf<T> extends Type<T> {
@@ -10,7 +10,7 @@ export class TypeOf<T> extends Type<T> {
 
   check(val: any): Result<T> {
     if(typeof val === this.typestring) return val as T;
-    return new Err(`${val} is not a ${this.typestring}`);
+    return this.err(`not a ${this.typestring}`, val)
   }
 
   toString() {

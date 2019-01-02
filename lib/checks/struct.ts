@@ -1,7 +1,6 @@
 import { Err } from "../result";
 import { KeyTrackResult, Type, KeyTrackingType } from "../type";
 import { GetType } from "../get-type";
-const util = require('util')
 
 /**
  * OptionalKey is a marker type that indicates that the key in a struct that
@@ -73,18 +72,26 @@ export class Struct<T extends TypeStruct> extends KeyTrackingType<UnwrappedTypeS
       }
     }
 
-    return new Err(`${util.inspect(val)} failed the following checks:\n${errs.join('\n')}`);
+    if (errs.length === 1) {
+      return errs[0]
+    }
+
+    const err = this.err(() => {
+      return errs.join("\n")
+    }, val)
+    err.causes = errs
+    return err
   }
 
   private checkType(val: any): Err<UnwrappedTypeStruct<T>> | undefined {
-    if(typeof val !== 'object') return new Err(`${val} is not an object`);
-    if(Array.isArray(val)) return new Err(`${val} is an array`);
-    if(val === null) return new Err(`${val} is null`);
+    if(typeof val !== 'object') return this.err('not an object', val)
+    if(Array.isArray(val)) return this.err('is an array', val)
+    if(val === null) return this.err('is null', val)
     return undefined;
   }
 
-  private checkFields(val: any): string[] {
-    const errs: string[] = [];
+  private checkFields(val: any): Err<any>[] {
+    const errs: Err<any>[] = [];
     for(const prop in this.definition) {
       const field = this.definition[prop]
       if (!(prop in val)) {
@@ -92,12 +99,16 @@ export class Struct<T extends TypeStruct> extends KeyTrackingType<UnwrappedTypeS
           continue;
         }
 
-        errs.push(`missing key '${prop}'`);
+        errs.push(new Err('key missing', {
+          path: [prop],
+          type: keyType(field),
+          value: undefined,
+        }))
         continue;
       }
 
       const result = keyType(field).check(val[prop]);
-      if(result instanceof Err) errs.push(result.message);
+      if(result instanceof Err) errs.push(Err.lift(result, prop));
     }
 
     return errs;

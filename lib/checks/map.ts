@@ -1,4 +1,4 @@
-import { Err, Result } from "../result";
+import { Err, MapKey, MapKeyIndex, Result } from "../result";
 import { Type } from "../type";
 
 export class MapType<K, V> extends Type<Map<K, V>> {
@@ -12,20 +12,22 @@ export class MapType<K, V> extends Type<Map<K, V>> {
   }
 
   check(val: any): Result<Map<K, V>> {
-    if(!(val instanceof Map)) return new Err(`${val} is not an instance of Map`);
+    if(!(val instanceof Map)) return this.err(`not a Map`, val);
 
+    let i = 0
     for(const [k, v] of val) {
       const kResult = this.keyType.check(k);
-      if(kResult instanceof Err) return new Err(`{val} key error: ${kResult.message}`);
+      if(kResult instanceof Err) return Err.lift(kResult, new MapKeyIndex(i))
       const vResult = this.valueType.check(v);
-      if(vResult instanceof Err) return new Err(`{val} value error: ${vResult.message}`);
+      if(vResult instanceof Err) return Err.lift(vResult, new MapKey(k))
+      i++
     }
 
     return val as Map<K, V>;
   }
 
   toString() {
-    return `{ [key: ${this.keyType}]: ${this.valueType} }`
+    return `Map<${this.keyType}, ${this.valueType}>`
   }
 }
 

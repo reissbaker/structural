@@ -10,12 +10,18 @@ export class Arr<T> extends Type<Array<T>> {
   }
 
   check(val: any): Result<Array<T>> {
-    if(!Array.isArray(val)) return new Err(`${val} is not an array`);
+    if(!Array.isArray(val)) return this.err(`not an array`, val)
 
-    for(const el of val) {
-      const result = this.elementType.check(el);
-      // Don't bother collecting all errors in an array: for long arrays this is very obnoxious
-      if(result instanceof Err) return new Err(result.message);
+
+    // use traditional iteration so we know the index
+    for (let i = 0; i<val.length; i++) {
+      if (i in val) { // support sparse arrays
+        const el = val[i]
+        const result = this.elementType.check(el);
+        if (result instanceof Err) {
+          return Err.lift(result, i)
+        }
+      }
     }
 
     // If we got this far, there were no errors; it's an Array<T>

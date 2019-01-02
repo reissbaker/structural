@@ -1,9 +1,9 @@
-import { Result, Err } from "../result";
+import { Result } from "../result";
 import { Type } from "../type";
 
 export class Never extends Type<never> {
-  check(_: any): Result<never> {
-    return new Err('never')
+  check(val: any): Result<never> {
+    return this.err('never values cannot occur', val)
   }
 
   toString() {
