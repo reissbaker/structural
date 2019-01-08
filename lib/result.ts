@@ -5,18 +5,18 @@ export { inspect }
 const MAX_ERR_LINE_LENGTH = 40
 const INDENT = '  '
 
-export const indent = (prefix: string, lines: string | string[]) =>
+export const indent = (lines: string | string[], prefix = INDENT) =>
   (Array.isArray(lines) ? lines : lines.split("\n"))
     .map(line => prefix + line)
     .join("\n")
 
-export const indentNext = (prefix: string, lines: string | string[]) => {
+export const indentNext = (lines: string | string[], prefix = INDENT) => {
   const [first, ...rest] = Array.isArray(lines) ? lines : lines.split("\n")
   if (rest.length === 0) { return first }
-  return [first, ...indent(prefix, rest).split("\n")].join("\n")
+  return [first, ...indent(rest, prefix).split("\n")].join("\n")
 }
 
-function shouldWrap(msg: string | string[]): boolean {
+export function shouldWrap(msg: string | string[]): boolean {
   const parts = Array.isArray(msg) ? msg : [msg];
 
   const len = parts.map(s => s.length).reduce((m, x) => m + x, 0)
@@ -29,7 +29,7 @@ function shouldWrap(msg: string | string[]): boolean {
 function quoteOrIndent(msg: string, suffix?: (inline: boolean) => string): string {
   if (shouldWrap(msg)) {
     return ("\n" +
-      indent(INDENT, msg) +
+      indent(msg) +
       (msg.endsWith("\n") ? '' : "\n") +
       (suffix ? suffix(false) : ''))
   }
@@ -38,9 +38,9 @@ function quoteOrIndent(msg: string, suffix?: (inline: boolean) => string): strin
 
 function subMessage(pre: string, msg: string): string {
   if (pre.includes("\n")) {
-    return concat(pre, indentNext(INDENT, msg))
+    return concat(pre, indentNext(msg))
   }
-  return concat(pre, "\n" + indent(INDENT, msg))
+  return concat(pre, "\n" + indent(msg))
 }
 
 function concat(...msgs: string[]): string {
@@ -82,6 +82,7 @@ export class Err<_> {
         value: err.value,
         type: err.type,
         path: path.concat(err.path),
+        causes: err.causes,
       }
     )
   }

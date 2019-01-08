@@ -1,4 +1,4 @@
-import { Err, Result, indent, indentNext } from "./result";
+import { Err, Result, shouldWrap, indent, indentNext } from "./result";
 
 export abstract class Type<T> {
   abstract check(val: any): Result<T>;
@@ -125,7 +125,7 @@ export class Validation<T> extends Type<T> {
       return this.err(`validation error: ${e}`, val);
     }
 
-    return this.err(`failed validation`, val);
+    return this.err(`validation returned false`, val);
   }
 
   toString() {
@@ -251,8 +251,8 @@ export class Either<L, R> extends KeyTrackingType<L|R> {
     const msg = () => {
       let lines = [`matched none of ${causes.length} types:`]
       causes.forEach(err => {
-        lines.push(`| ${indentNext('   ', err.type.toString())}`)
-        lines.push(indent('    ', err.message))
+        lines.push(`| ${indentNext(err.type.toString())}`)
+        lines.push(indent(err.message))
       })
       return lines.join("\n")
     }
@@ -264,9 +264,12 @@ export class Either<L, R> extends KeyTrackingType<L|R> {
 
   toString(): string {
     const l = this.l instanceof Intersect ?
-     `(${this.l})` : this.l
+     `(${this.l})` : this.l.toString()
     const r = this.r instanceof Intersect ?
-      `(${this.r})` : this.r
+      `(${this.r})` : this.r.toString()
+    if (shouldWrap([l, r])) {
+      return `${l} |\n${r}`
+    }
     return `${l} | ${r}`
   }
 

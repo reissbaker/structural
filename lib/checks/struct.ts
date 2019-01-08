@@ -1,4 +1,4 @@
-import { Err } from "../result";
+import { Err, shouldWrap, indentNext } from "../result";
 import { KeyTrackResult, Type, KeyTrackingType } from "../type";
 import { GetType } from "../get-type";
 
@@ -118,10 +118,12 @@ export class Struct<T extends TypeStruct> extends KeyTrackingType<UnwrappedTypeS
     Object.keys(this.definition).forEach(key => {
       const value = this.definition[key]
       const keystr = isOptional(value) ? `${key}?: ` : `${key}: `
+      // is this cooL??? hard to reason about
       const valstr = keyType(value).toString()
       kvs.push(keystr + valstr)
     })
-    return '{ ' + kvs.join(', ') + ' }'
+    const sep = shouldWrap(kvs) ? ",\n" : ', '
+    return '{ ' + indentNext(kvs.join(sep)) + ' }'
   }
 }
 

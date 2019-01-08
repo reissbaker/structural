@@ -1,4 +1,4 @@
-export * from "./lib/result";
+export { StructuralError } from "./lib/result";
 export * from "./lib/type";
 export * from "./lib/get-type";
 export * from "./lib/match"
