@@ -2,7 +2,7 @@ import { Type } from './type'
 import { inspect } from 'util'
 export { inspect }
 
-const MAX_ERR_LINE_LENGTH = 15
+const MAX_ERR_LINE_LENGTH = 40
 const INDENT = '  '
 
 export const indent = (prefix: string, lines: string | string[]) =>
@@ -36,8 +36,11 @@ function quoteOrIndent(msg: string, suffix?: (inline: boolean) => string): strin
   return '`' + msg + '`' + (suffix ? suffix(true) : '')
 }
 
-function subMessage(msg: string): string {
-  return indentNext(INDENT, msg)
+function subMessage(pre: string, msg: string): string {
+  if (pre.includes("\n")) {
+    return concat(pre, indentNext(INDENT, msg))
+  }
+  return concat(pre, "\n" + indent(INDENT, msg))
 }
 
 function concat(...msgs: string[]): string {
@@ -145,15 +148,20 @@ export class Err<_> {
     return concat(
       ...pathPart,
       'given value', quoteOrIndent(inspect(this.value)),
-      'did not match expected type', quoteOrIndent(this.type.toString(), errSep),
-      subMessage(this.message),
+      'did not match expected type', subMessage(
+        quoteOrIndent(this.type.toString(), errSep),
+        this.message,
+      )
     )
   }
 
   toStringNoValue() {
     return concat(
-      'not of type', quoteOrIndent(this.type.toString(), errSep),
-      subMessage(this.message),
+      'not of type',
+      subMessage(
+        quoteOrIndent(this.type.toString(), errSep),
+        this.message,
+      ),
     )
   }
 
