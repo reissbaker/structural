@@ -1,4 +1,4 @@
-import { Err, Result, inspect, indent, indentNext } from "./result";
+import { Err, Result, indent, indentNext } from "./result";
 
 export abstract class Type<T> {
   abstract check(val: any): Result<T>;
@@ -368,17 +368,37 @@ function checkTrackKeys<T>(check: Type<T>, val: any): KeyTrackResult<T> {
   };
 }
 
+export class Never extends Type<never> {
+  check(val: any): Result<never> {
+    return this.err('never values cannot occur', val)
+  }
+
+  toString() {
+    return 'never'
+  }
+}
+
+export const never = new Never();
+
 /*
  * Given a value and a KeyTrack result, either return a nice error message if it fails exactness
  * checking, or return undefined if there is no error.
  */
 export function exactError<T>(val: any, result: KeyTrack<T>, t: Type<any>): Err<T> | undefined {
   if(result.exact) {
-    const errs: string[] = [];
+    const errs: Err<any>[] = [];
     const allowed = new Set(result.knownKeys);
     for(const prop in val) {
       if(!allowed.has(prop)) {
-        errs.push(`has unknown key \`${inspect(prop)}\``);
+        errs.push(
+          new Err(() => `unknown key \`${prop}\` should not exist`, {
+            value: val[prop],
+            // this lie so we don't have a circular import
+            // from checks.
+            type: never,
+            path: [prop]
+          })
+        )
       }
     }
 
