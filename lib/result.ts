@@ -1,6 +1,5 @@
 import { Type } from './type'
 import { inspect } from 'util'
-export { inspect }
 
 const MAX_ERR_LINE_LENGTH = 40
 const INDENT = '  '
@@ -261,12 +260,10 @@ export function pathToString(lookupPath: PathElement[]): string {
 export class StructuralError extends Error {
   readonly value: any          // The invalid value
   readonly type: Type<any>     // Expected type of value
-  readonly causes: Err<any>[]  // causes
+  readonly causes: Err<any>[]  // Flattened causes of this error
 
   constructor(msg: string, opts: Pick<StructuralError, 'value' | 'type' | 'causes'>) {
-
     super(msg)
-    // TODO: the above "which" doesn't necessarily make sense in all cases.
     this.value = opts.value
     this.type = opts.type
     this.causes = opts.causes
