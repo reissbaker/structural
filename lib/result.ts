@@ -2,7 +2,7 @@ import { Type } from './type'
 import { inspect } from 'util'
 export { inspect }
 
-const MAX_ERR_LINE_LENGTH = 80
+const MAX_ERR_LINE_LENGTH = 15
 const INDENT = '  '
 
 export const indent = (prefix: string, lines: string | string[]) =>
@@ -63,7 +63,7 @@ type ErrOpts<_> = {
     causes?: Err<_>[]
 }
 
-const errSep = (inline: boolean) => inline ? ':' : 'which failed because:'
+const errSep = (inline: boolean) => inline ? ':' : 'because:'
 
 export class Err<_> {
   path: PathElement[] // array defining access to the field in `data`. Will be [] if element is data
@@ -88,7 +88,8 @@ export class Err<_> {
     return new Err(
       () => {
         if (errs.length === 1) { return errs[0].toString() }
-        return `failed multiple checks:\n${errs.join('\n')}`
+        const errStrings = errs.map((e) => `- ${e}`).join("\n")
+        return `failed multiple checks:\n${errStrings}`
       },
       { ...opts, causes: errs },
     )
@@ -143,8 +144,8 @@ export class Err<_> {
     const pathPart = this.path.length ? ['at', `${pathToString(this.path)}:`] : []
     return concat(
       ...pathPart,
-      'expected type', quoteOrIndent(this.type.toString()),
-      'but received value', quoteOrIndent(inspect(this.value), errSep),
+      'given value', quoteOrIndent(inspect(this.value)),
+      'did not match expected type', quoteOrIndent(this.type.toString(), errSep),
       subMessage(this.message),
     )
   }

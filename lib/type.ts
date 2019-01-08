@@ -413,10 +413,10 @@ export function exactError<T>(val: any, result: KeyTrack<T>, t: Type<any>): Err<
     }
 
     if(errs.length > 1) {
-      return new Err(() => `failed multiple checks:\n${errs.join('\n')}`, {
+      return Err.combine(errs, {
         value: val,
         type: t,
-      });
+      })
     }
   }
   return undefined
