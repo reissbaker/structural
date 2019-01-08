@@ -4,11 +4,11 @@ export abstract class Type<T> {
   abstract check(val: any): Result<T>;
 
   assert(val: any): T {
-    return assert(this.check(val), val);
+    return assert(this.check(val), this, val);
   }
 
   slice(val: any): T {
-    return assert(this.sliceResult(val), val);
+    return assert(this.sliceResult(val), this, val);
   }
 
   /**
@@ -77,8 +77,14 @@ export abstract class Type<T> {
 }
 type tostr = () => string
 
-function assert<T>(result: Result<T>, val: any): T {
-  if(result instanceof Err) throw result.toError(val);
+function assert<T>(result: Result<T>, type: Type<T>, value: any): T {
+  if(result instanceof Err) {
+    if (result.path.length) {
+      const final = Err.combine([result], { type, value })
+      throw final.toError();
+    }
+    throw result.toError();
+  }
   return result;
 }
 
@@ -402,8 +408,12 @@ export function exactError<T>(val: any, result: KeyTrack<T>, t: Type<any>): Err<
       }
     }
 
-    if(errs.length !== 0) {
-      return new Err(() => `failed checks:\n${errs.join('\n')}`, {
+    if (errs.length === 1) {
+      return errs[0]
+    }
+
+    if(errs.length > 1) {
+      return new Err(() => `failed multiple checks:\n${errs.join('\n')}`, {
         value: val,
         type: t,
       });

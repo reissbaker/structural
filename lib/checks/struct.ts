@@ -76,15 +76,14 @@ export class Struct<T extends TypeStruct> extends KeyTrackingType<UnwrappedTypeS
       return errs[0]
     }
 
-    const err = this.err(() => {
-      return errs.join("\n")
-    }, val)
-    err.causes = errs
-    return err
+    return Err.combine(errs, {
+      value: val,
+      type: this,
+    })
   }
 
   private checkType(val: any): Err<UnwrappedTypeStruct<T>> | undefined {
-    if(typeof val !== 'object') return this.err('not an object', val)
+    if(typeof val !== 'object') return this.err(`isn't an object`, val)
     if(Array.isArray(val)) return this.err('is an array', val)
     if(val === null) return this.err('is null', val)
     return undefined;

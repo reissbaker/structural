@@ -2,7 +2,8 @@ import { Type } from './type'
 import { inspect } from 'util'
 export { inspect }
 
-type tostr = () => string
+const MAX_ERR_LINE_LENGTH = 80
+const INDENT = '  '
 
 export const indent = (prefix: string, lines: string | string[]) =>
   (Array.isArray(lines) ? lines : lines.split("\n"))
@@ -14,6 +15,55 @@ export const indentNext = (prefix: string, lines: string | string[]) => {
   if (rest.length === 0) { return first }
   return [first, ...indent(prefix, rest).split("\n")].join("\n")
 }
+
+function shouldWrap(msg: string | string[]): boolean {
+  const parts = Array.isArray(msg) ? msg : [msg];
+
+  const len = parts.map(s => s.length).reduce((m, x) => m + x, 0)
+  if (len > MAX_ERR_LINE_LENGTH) { return true }
+
+  const hasNewline = parts.map(s => s.includes("\n")).reduce((m, x) => m || x)
+  return hasNewline
+}
+
+function quoteOrIndent(msg: string, suffix?: (inline: boolean) => string): string {
+  if (shouldWrap(msg)) {
+    return ("\n" +
+      indent(INDENT, msg) +
+      (msg.endsWith("\n") ? '' : "\n") +
+      (suffix ? suffix(false) : ''))
+  }
+  return '`' + msg + '`' + (suffix ? suffix(true) : '')
+}
+
+function subMessage(msg: string): string {
+  return indentNext(INDENT, msg)
+}
+
+function concat(...msgs: string[]): string {
+  const out = []
+  for (let i = 0; i<msgs.length; i++) {
+    const cur = msgs[i]
+    const nxt = msgs[i+1]
+    out.push(cur)
+    if (!nxt || cur.endsWith("\n") ||  nxt.startsWith("\n")) {
+      continue;
+    }
+    out.push(" ")
+  }
+  return out.join('')
+}
+
+type tostr = () => string
+
+type ErrOpts<_> = {
+    value: any,
+    type: Type<any>,
+    path?: PathElement[],
+    causes?: Err<_>[]
+}
+
+const errSep = (inline: boolean) => inline ? ':' : 'which failed because:'
 
 export class Err<_> {
   path: PathElement[] // array defining access to the field in `data`. Will be [] if element is data
@@ -33,12 +83,18 @@ export class Err<_> {
     )
   }
 
-  constructor(msg: string | tostr, {path = [], value, type, causes = []}: {
-    path?: PathElement[],
-    value: any,
-    type: Type<any>,
-    causes?: Err<_>[]
-  }) {
+  // TODO: disallow causes option
+  static combine<_>(errs: Err<any>[], opts: ErrOpts<_>): Err<_> {
+    return new Err(
+      () => {
+        if (errs.length === 1) { return errs[0].toString() }
+        return `failed multiple checks:\n${errs.join('\n')}`
+      },
+      { ...opts, causes: errs },
+    )
+  }
+
+  constructor(msg: string | tostr, {path = [], value, type, causes = []}: ErrOpts<_>) {
     this.msg = msg
     this.path = path
     this.value = value
@@ -53,32 +109,51 @@ export class Err<_> {
     return msg
   }
 
-  toError(data: any): StructuralError {
+  protected rootCauses(parentPath: PathElement[]): Err<_>[] {
+    if (this.causes.length === 0) {
+      return [Err.lift(this, ...parentPath)]
+    }
+    return this.causes
+      .map(c => c.rootCauses(parentPath.concat(this.path)))
+      .reduce((x, m) => x.concat(m), [])
+  }
+
+  toError(): StructuralError {
+    // force expanding all errors now so that the lifted errors in rootCauses
+    // below are already memoized
+    const asString = this.toStringWithValue()
+
+    // flatten causes, which is more inspectable to downstream exception
+    // handlers
+    const causes = this.causes
+      .map(c => c.rootCauses(this.path))
+      .reduce((x, m) => x.concat(m), [])
+
     return new StructuralError(
-      this.message,
+      asString,
       {
-        data,
-        path: this.path,
         value: this.value,
         type: this.type,
-        errors: this.causes.map(c => c.toError(data)),
+        causes: causes,
       }
     );
   }
 
   toStringWithValue() {
-    const pathPart = this.path.length ?
-      `${pathToString(this.path)}: ` : ''
-    const typeString = indentNext('  ', this.type.toString())
-    const valString = indentNext('  ', inspect(this.value))
-    const message = this.message
-   return `${pathPart}expected type \`${typeString}\` but received value \`${valString}\`: ${message}`
- return ``
+    const pathPart = this.path.length ? ['at', `${pathToString(this.path)}:`] : []
+    return concat(
+      ...pathPart,
+      'expected type', quoteOrIndent(this.type.toString()),
+      'but received value', quoteOrIndent(inspect(this.value), errSep),
+      subMessage(this.message),
+    )
   }
 
   toStringNoValue() {
-    const typeString = indentNext('  ', this.type.toString())
-    return `failed \`${typeString}\`: ${this.message}`
+    return concat(
+      'not of type', quoteOrIndent(this.type.toString(), errSep),
+      subMessage(this.message),
+    )
   }
 
   // Use this stringifier when embedding an error inside another error's message.
@@ -109,7 +184,7 @@ export class MapKeyIndex {
   apply(current: any) {
     const keys = Array.from(current.keys())
     if (keys.length <= this.index) {
-      throw new Error(`${this} out of bounds of ${keys} in ${current}`)
+      throw new Error(`${this} index out of bounds of keys ${keys.length} in ${current}`)
     }
     return keys[this.index]
   }
@@ -174,26 +249,17 @@ export function pathToString(lookupPath: PathElement[]): string {
 }
 
 export class StructuralError extends Error {
-  readonly data: any           // top-level data
-  readonly path: PathElement[] // array defining access to the field in `data`. Will be [] if element is data
   readonly value: any          // The invalid value
   readonly type: Type<any>     // Expected type of value
-  readonly errors: StructuralError[] // causes
+  readonly causes: Err<any>[]  // causes
 
-  constructor(msg: string, { data, path, value, type, errors = []}: Pick<StructuralError, 'data' | 'path' | 'value' | 'type' | 'errors'>) {
-    const pathPart = path.length ?
-      `At \`${pathToString(path)}\`: ` : ''
-    super(
-`${pathPart}Expected a value of type \`
-  ${indentNext('  ', type.toString())}
-\` but received \`
-  ${indentNext('  ', inspect(value))}
-\` which ${indentNext('  ', msg)}`)
-    this.data = data
-    this.path = path
-    this.value = value
-    this.type = type
-    this.errors = errors
+  constructor(msg: string, opts: Pick<StructuralError, 'value' | 'type' | 'causes'>) {
+
+    super(msg)
+    // TODO: the above "which" doesn't necessarily make sense in all cases.
+    this.value = opts.value
+    this.type = opts.type
+    this.causes = opts.causes
   }
 }
 
