@@ -54,7 +54,7 @@ describe("subtype", () => {
       name: t.optional(t.str),
     })
 
-    check.t({ email: 'bob@example.com' })
+    check.literal({ email: 'bob@example.com' })
   })
 
   test("slice omits optional keys that are not defined", () => {

@@ -33,8 +33,8 @@ export abstract class Type<T> {
    * const User = t.subtype({ name: t.str, email: t.str })
    * const myUser = User.({ dog: 'cow' }) // Typescript compile error
    */
-  t(val: T): T {
-    return val
+  literal(val: T): T {
+    return val;
   }
 
   /*
