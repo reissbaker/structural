@@ -14,7 +14,7 @@ export class OptionalKey<T extends Type<any>> {
   }
 }
 
-type OptionalOrType<T> = T extends OptionalKey<infer Inner> ? Inner : T
+type OptionalOrType<T> = T extends OptionalKey<infer Inner> ? Inner : T;
 
 type TypeStruct = {
   [key: string]: Type<any> | OptionalKey<any>;
@@ -25,17 +25,17 @@ type TypeStruct = {
 
 // Returns a type like `"foo" | "bar"` for all the optional keys in a typestruct
 type OptionalPropertyNames<T extends TypeStruct> = {
-  [K in keyof T]: T[K] extends OptionalKey<any> ? K : never
-}[keyof T]
+  [K in keyof T]: T[K] extends OptionalKey<any> ? K : never;
+}[keyof T];
 
 // Unwraps Type<T> and OptionalKey<Type<T>> to T for all keys in a typestruct
 type UnwrapTypes<T extends TypeStruct> = {
-  [K in keyof T]: GetType<OptionalOrType<T[K]>>
-}
+  [K in keyof T]: GetType<OptionalOrType<T[K]>>;
+};
 
 export type UnwrappedTypeStruct<T extends TypeStruct> =
   /* required props */ Pick<UnwrapTypes<T>, Exclude<keyof T, OptionalPropertyNames<T>>> &
-  /* optional props */ Partial<Pick<UnwrapTypes<T>, OptionalPropertyNames<T>>>
+  /* optional props */ Partial<Pick<UnwrapTypes<T>, OptionalPropertyNames<T>>>;
 
 export function keyType<T>(box: OptionalKey<Type<T>> | Type<T>): Type<T> {
   if (box instanceof OptionalKey) {
@@ -45,7 +45,7 @@ export function keyType<T>(box: OptionalKey<Type<T>> | Type<T>): Type<T> {
 }
 
 export function isOptional<T extends Type<any>>(box: OptionalKey<T> | T): box is OptionalKey<T> {
-  return (box instanceof OptionalKey)
+  return (box instanceof OptionalKey);
 }
 
 export class Struct<T extends TypeStruct> extends KeyTrackingType<UnwrappedTypeStruct<T>> {
@@ -91,7 +91,7 @@ export class Struct<T extends TypeStruct> extends KeyTrackingType<UnwrappedTypeS
           continue;
         }
 
-        errs.push(`missing key '${prop}'`)
+        errs.push(`missing key '${prop}'`);
         continue;
       }
 
@@ -114,5 +114,5 @@ export function exact<T extends TypeStruct>(def: T): HiddenStruct<T> {
 }
 
 export function optional<T extends Type<any>>(check: T): OptionalKey<T> {
-  return new OptionalKey(check)
+  return new OptionalKey(check);
 }
