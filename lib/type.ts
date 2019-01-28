@@ -125,13 +125,36 @@ export class Validation<T> extends Type<T> {
  */
 
 export type KeyTrack<T> = {
+  // The value being checked
   val: T;
+
+  /*
+   * The set of known keys discovered so far. For example, for a struct defined as:
+   *
+   *     t.subtype({ hello: t.str })
+   *
+   * The known keys would be `[ "hello" ]`.
+   *
+   * For non-record types, the known keys will be null, since they don't have a known set of keys.
+   */
   knownKeys: string[] | null;
+
+  // Whether or not the keys should be an exhaustive list of all possible keys ("exact"), or whether
+  // they're a subset of keys ("subtype"). If true, it's exhaustive; otherwise, it's a subset.
   exact: boolean;
 }
+
 export type KeyTrackResult<T> = Err<T> | KeyTrack<T>;
 
 export abstract class KeyTrackingType<T> extends Type<T> {
+  // Extension point for subclasses
+  abstract checkTrackKeys(val: any): KeyTrackResult<T>;
+
+  /*
+   * Default implementation of `check` for this class. Do not reimplement this! Instead, implement
+   * `checkTrackKeys`, so that algebraic data types correctly understand how to slice and intersect
+   * your keys.
+   */
   check(val: any): Result<T> {
     const result = this.checkTrackKeys(val);
     if(result instanceof Err) return result;
@@ -139,9 +162,11 @@ export abstract class KeyTrackingType<T> extends Type<T> {
     return exactError(val, result) || result.val;
   }
 
-
-  abstract checkTrackKeys(val: any): KeyTrackResult<T>;
-
+  /*
+   * Default implementation of `sliceResult` for this class. Do not reimplement this! Instead,
+   * implement `checkTrackKeys`, so that algebraic data types correctly understand how to slice and
+   * intersect your keys.
+   */
   sliceResult(val: any): Result<T> {
     const result = this.checkTrackKeys(val);
     if(result instanceof Err) return result;
@@ -236,6 +261,14 @@ export class Intersect<L, R> extends KeyTrackingType<L&R> {
   }
 }
 
+/*
+ * ### Key tracking helpers
+ */
+
+/*
+ * Given a type and a value, safely check it, returning a KeyTrackResult for it. This function works
+ * regardless of whether or not the underlying type is a KeyTrackingType.
+ */
 function checkTrackKeys<T>(check: Type<T>, val: any): KeyTrackResult<T> {
   if(check instanceof KeyTrackingType) {
     return check.checkTrackKeys(val);
@@ -251,6 +284,10 @@ function checkTrackKeys<T>(check: Type<T>, val: any): KeyTrackResult<T> {
   };
 }
 
+/*
+ * Given a value and a KeyTrack result, either return a nice error message if it fails exactness
+ * checking, or return undefined if there is no error.
+ */
 export function exactError<T>(val: any, result: KeyTrack<T>): Err<T> | undefined {
   if(result.exact) {
     const errs = [];
@@ -265,5 +302,6 @@ export function exactError<T>(val: any, result: KeyTrack<T>): Err<T> | undefined
       return new Err(`${val} failed the following checks:\n${errs.join('\n')}`);
     }
   }
+
   return undefined;
 }
