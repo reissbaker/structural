@@ -101,16 +101,13 @@ test("kind example", () => {
     post(type)
   }
 
-  function logType(type: t.Kind) {
-    const pre = (v: t.Kind) => {
-      console.group()
-      console.log((v.constructor as any).name)
-    }
-    const post = (_: t.Kind) => { console.groupEnd() }
-    visitTypes(type, pre, post)
+  function visitType(type: t.Kind) {
+    const pre = (_: t.Kind) => {};
+    const post = (_: t.Kind) => {};
+    visitTypes(type, pre, post);
   }
 
-  logType(t.subtype({
+  visitType(t.subtype({
     foo: t.num,
     bar: t.num,
     baz: t.subtype({
