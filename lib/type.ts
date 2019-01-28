@@ -25,6 +25,18 @@ export abstract class Type<T> {
     return !(result instanceof Err)
   }
 
+  /**
+   * Typescript helper that enforces the correct declaration of a value with no
+   * overhead.
+   *
+   * @example
+   * const User = t.subtype({ name: t.str, email: t.str })
+   * const myUser = User.({ dog: 'cow' }) // Typescript compile error
+   */
+  t(val: T): T {
+    return val
+  }
+
   /*
    * Default slice implementation just calls `check`. Override this as necessary.
    */
@@ -143,7 +155,12 @@ export abstract class KeyTrackingType<T> extends Type<T> {
     // just the known set of keys.
     const sliced: { [key: string]: any } = {};
     for(const key of result.knownKeys) {
-      sliced[key] = val[key];
+      // only copy keys that exist.
+      // our type-checking already disallows {} fitting { foo: t.undef }
+      // because foo is missing, so this can't produce invalid results.
+      if (key in val) {
+        sliced[key] = val[key];
+      }
     }
 
     return sliced as T;

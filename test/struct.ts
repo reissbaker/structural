@@ -15,6 +15,58 @@ describe("subtype", () => {
     check.assert({ hi: "world", foo: "bar" });
   });
 
+  test("allows optional keys to be missing", () => {
+    const check = t.subtype({
+      hi: t.str,
+      opt: t.optional(t.bool),
+    })
+    check.assert({ hi: "world" })
+  })
+
+  test("rejects optional keys that exist, but are undefined", () => {
+    const check = t.subtype({
+      hi: t.str,
+      opt: t.optional(t.bool),
+    })
+    expect(() => {
+      check.assert({ hi: "world", opt: undefined })
+    }).toThrow()
+  })
+
+  test("type inference allows omitting optional keys", () => {
+    const check = t.subtype({
+      hi: t.str,
+      opt: t.optional(t.bool),
+    })
+
+    type Derpus = t.GetType<typeof check>
+
+    const wat: Derpus = {
+      hi: 'dog',
+    }
+
+    check.assert(wat)
+  })
+
+  test("type inference allows omitting optional keys with .t", () => {
+    const check = t.subtype({
+      email: t.str,
+      name: t.optional(t.str),
+    })
+
+    check.t({ email: 'bob@example.com' })
+  })
+
+  test("slice omits optional keys that are not defined", () => {
+    const check = t.subtype({
+      email: t.str,
+      name: t.optional(t.str),
+    })
+
+    const result = check.slice({ email: 'bob@example.com' })
+    expect(Object.keys(result)).toEqual(['email'])
+  })
+
   test("rejects subtypes", () => {
     const check = t.subtype({
       hi: t.str,
@@ -64,6 +116,24 @@ describe("exact", () => {
     });
     check.assert({ hi: "world" });
   });
+
+  test("allows optional keys to be missing", () => {
+    const check = t.exact({
+      hi: t.str,
+      opt: t.optional(t.bool),
+    })
+    check.assert({ hi: "world" })
+  })
+
+  test("rejects optional keys that exist, but are undefined", () => {
+    const check = t.exact({
+      hi: t.str,
+      opt: t.optional(t.bool),
+    })
+    expect(() => {
+      check.assert({ hi: "world", opt: undefined })
+    }).toThrow()
+  })
 
   test("rejects supertypes", () => {
     const check = t.exact({
