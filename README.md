@@ -11,6 +11,19 @@ integration with its type system, allow TypeScript users to automatically get
 compile-time type inference for their Structural types in addition to runtime
 type checking.
 
+### Table of contents
+
+* [Why?](#why)
+* [TypeScript integration](#typescript-integration)
+* [Comparisons](#comparisons)
+      * [Structural:](#structural-1)
+      * [JSON Schema:](#json-schema)
+* [Advanced type system features](#advanced-type-system-features)
+* [Custom validations](#custom-validations)
+* [Slicing keys](#slicing-keys)
+
+## Why?
+
 Typically with data received at runtime, you're forced to do one of the
 following:
 
@@ -59,17 +72,6 @@ following advanced features:
   an object with both a `name` and an `eyeColor` is a valid `Person`.
 * __Algebraic data types:__ use `.and` and `.or` on types to compose them via
   type intersections or unions.
-
-
-### Table of contents
-
-* [TypeScript integration](#typescript-integration)
-* [Comparisons](#comparisons)
-      * [Structural:](#structural-1)
-      * [JSON Schema:](#json-schema)
-* [Advanced type system features](#advanced-type-system-features)
-* [Custom validations](#custom-validations)
-* [Slicing keys](#slicing-keys)
 
 
 ## TypeScript integration
