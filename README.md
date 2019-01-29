@@ -29,6 +29,7 @@ Here's a simple example:
 ```typescript
 import * as t from "structural";
 
+// Define a User type
 const User = t.subtype({
   id: t.num,
   name: t.str,
