@@ -61,6 +61,17 @@ following advanced features:
   type intersections or unions.
 
 
+### Table of contents
+
+* [TypeScript integration](#typescript-integration)
+* [Comparisons](#comparisons)
+      * [Structural:](#structural-1)
+      * [JSON Schema:](#json-schema)
+* [Advanced type system features](#advanced-type-system-features)
+* [Custom validations](#custom-validations)
+* [Slicing keys](#slicing-keys)
+
+
 ## TypeScript integration
 
 Structural is written in TypeScript and supports simple, transparent
