@@ -43,6 +43,7 @@ try {
   const user = User.assert(data);
 } catch(e) {
   console.log(`Data ${data} did not match the User type`);
+  console.log(`It failed with the following error: ${e}`);
 }
 ```
 
