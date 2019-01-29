@@ -4,3 +4,7 @@ checks:
   # infinity false positives
   similar-code:
     enabled: false
+
+  # this check is just dumb: early exits are good, not bad
+  return-statements:
+    enabled: false
