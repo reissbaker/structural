@@ -289,19 +289,16 @@ function checkTrackKeys<T>(check: Type<T>, val: any): KeyTrackResult<T> {
  * checking, or return undefined if there is no error.
  */
 export function exactError<T>(val: any, result: KeyTrack<T>): Err<T> | undefined {
-  if(result.exact) {
-    const errs = [];
-    const allowed = new Set(result.knownKeys);
-    for(const prop in val) {
-      if(!allowed.has(prop)) {
-        errs.push(`Unknown key ${prop} in ${val}`);
-      }
-    }
+  if(!result.exact) return;
 
-    if(errs.length !== 0) {
-      return new Err(`${val} failed the following checks:\n${errs.join('\n')}`);
-    }
+  const errs = [];
+  const allowed = new Set(result.knownKeys);
+
+  for(const prop in val) {
+    if(!allowed.has(prop)) errs.push(`Unknown key ${prop} in ${val}`);
   }
 
-  return undefined;
+  if(errs.length !== 0) return new Err(`${val} failed the following checks:\n${errs.join('\n')}`);
+
+  return;
 }
