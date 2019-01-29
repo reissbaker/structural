@@ -3,24 +3,35 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/2e3709dce0e6e5e44217/maintainability)](https://codeclimate.com/github/reissbaker/structural/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/2e3709dce0e6e5e44217/test_coverage)](https://codeclimate.com/github/reissbaker/structural/test_coverage)
 
-Structural is a runtime type checker for JavaScript and TypeScript that allows
-you to run type-checking code on data you only have access to at runtime, such
-as JSON read from network requests, YAML read from the filesystem, or the
-results of SQL queries. Typically with data received at runtime, you're forced
-to do one of the following:
+Structural is a __runtime type checker__ for JavaScript and TypeScript that
+allows you to execute type-checking code on data you only have access to at
+runtime, like JSON data from network requests, YAML files from disk, or the
+results of SQL queries.
 
-1. Write extensive `if` statements to validate each piece of data;
-2. Write lengthy schema validation code in a variety of different verbose
-   languages (e.g. JSON schema, XML DTDs / Relax-NG / Schema / etc.);
+Typically with data received at runtime, you're forced to do one of the
+following:
+
+1. Write a bunch of `if` statements to validate each piece of data;
+2. Write piles of schema validation code in various verbose languages (e.g.
+   JSON schema, XML DTDs / Relax-NG / Schema / etc.);
 3. Or skip validating the data and pray.
 
-Structural allows you to skip writing out lengthy validation code, instead
-encoding validation into types defined in TypeScript or JavaScript, which are
-less verbose to write and can live inside the same source files as the rest of
-your code. Structural supports advanced type system features like generics,
-structural subtyping, and algebraic data types to keep your code extremely
-concise, and is null-safe: if you say something is a string, it will never be
-`null` or `undefined`.
+Structural allows you to skip writing validation code and instead encode
+validation logic into types defined in TypeScript or JavaScript; types are less
+verbose to write and can live inside the same source files as the rest of your
+code.
+
+Structural's type system strives to support every feature of TypeScript's
+compile-time type system, but at runtime. This includes support for the
+following advanced features:
+
+* _Generics._
+* _Null safety:_ if you say something is a string, it will never be `null` or
+  `undefined`.
+* _Structural subtyping:_ if `Person` records are defined by having a `name`,
+  an object with both a `name` and an `eyeColor` is a valid `Person`.
+* _Algebraic data types:_ use `.and` and `.or` on types to compose them via
+  type intersections or unions.
 
 Here's a simple example:
 
