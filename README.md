@@ -13,7 +13,7 @@
     <img src="https://api.codeclimate.com/v1/badges/2e3709dce0e6e5e44217/test_coverage" />
   </a>
   <a href="https://circleci.com/gh/reissbaker/structural">
-    <img src="https://img.shields.io/circleci/project/github/reissbaker/structural/master.svg" alt="CircleCI">
+    <img src="https://img.shields.io/circleci/project/github/reissbaker/structural/master.svg" alt="CircleCI" style="min-width: 88px">
   </a>
 </p>
 
