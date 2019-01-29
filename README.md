@@ -3,18 +3,12 @@
 </h1>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/structural">
-    <img src="https://badge.fury.io/js/structural.svg" alt="npm version">
-  </a>
-  <a href="https://codeclimate.com/github/reissbaker/structural/maintainability">
-    <img src="https://api.codeclimate.com/v1/badges/2e3709dce0e6e5e44217/maintainability" alt="Maintainability">
-  </a>
-  <a href="https://codeclimate.com/github/reissbaker/structural/test_coverage">
-    <img src="https://api.codeclimate.com/v1/badges/2e3709dce0e6e5e44217/test_coverage" />
-  </a>
-  <a href="https://circleci.com/gh/reissbaker/structural" style="min-width: 88px; display: inline-block">
-    <img src="https://img.shields.io/circleci/project/github/reissbaker/structural/master.svg" alt="CircleCI">
-  </a>
+
+[![npm version](https://badge.fury.io/js/structural.svg)](https://badge.fury.io/js/structural)
+[![Maintainability](https://api.codeclimate.com/v1/badges/2e3709dce0e6e5e44217/maintainability)](https://codeclimate.com/github/reissbaker/structural/maintainability)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/2e3709dce0e6e5e44217/test_coverage)](https://codeclimate.com/github/reissbaker/structural/test_coverage)
+[![CircleCI](https://img.shields.io/circleci/project/github/reissbaker/structural/master.svg)](https://circleci.com/gh/reissbaker/structural)
+
 </p>
 
 Structural is a __runtime type checker__ for JavaScript and TypeScript that
