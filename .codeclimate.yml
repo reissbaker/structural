@@ -8,3 +8,9 @@ checks:
   # this check is just dumb: early exits are good, not bad
   return-statements:
     enabled: false
+
+  # IQ 120 required
+  # srsly tho, the default was way too noisy
+  method-complexity:
+    config:
+      threshold: 6
