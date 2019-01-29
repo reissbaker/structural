@@ -1,6 +1,6 @@
 # Structural
 
-[![npm version](https://badge.fury.io/js/structural.svg)](https://badge.fury.io/js/structural)
+[![npm version](https://badge.fury.io/js/structural.svg)](https://www.npmjs.com/package/structural)
 [![Maintainability](https://api.codeclimate.com/v1/badges/2e3709dce0e6e5e44217/maintainability)](https://codeclimate.com/github/reissbaker/structural/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/2e3709dce0e6e5e44217/test_coverage)](https://codeclimate.com/github/reissbaker/structural/test_coverage)
 [![CircleCI](https://img.shields.io/circleci/project/github/reissbaker/structural/master.svg)](https://circleci.com/gh/reissbaker/structural)
