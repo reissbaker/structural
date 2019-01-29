@@ -21,6 +21,28 @@ validation logic into types defined in TypeScript or JavaScript; types are less
 verbose to write and can live inside the same source files as the rest of your
 code.
 
+Here's a simple example:
+
+```typescript
+import * as t from "structural";
+
+const User = t.subtype({
+  id: t.num,
+  name: t.str,
+});
+
+// Grab some data...
+const json = await fetch(...);
+const data = JSON.parse(data);
+
+//Assert the data matches the User type.
+try {
+  const user = User.assert(data);
+} catch(e) {
+  console.log(`Data ${data} did not match the User type`);
+}
+```
+
 Structural's type system strives to support every feature of TypeScript's
 compile-time type system, but at runtime. This includes support for the
 following advanced features:
@@ -33,55 +55,48 @@ following advanced features:
 * __Algebraic data types:__ use `.and` and `.or` on types to compose them via
   type intersections or unions.
 
-Here's a simple example:
+
+## TypeScript integration
+
+Structural is written in TypeScript and supports simple, transparent
+compile-time type inference. You'll never have to write both a TypeScript type
+and a Structural type: any Structural type will get automatically inferred into
+a TypeScript type. For example:
 
 ```typescript
-import * as t from "structural";
-
 const User = t.subtype({
   id: t.num,
   name: t.str,
-  login: t.str,
-  hireable: t.bool,
 });
 
-// Grab some data...
-const json = await fetch(...);
-const data = JSON.parse(data);
-
 /*
-Assert the data matches the User type.
-For TypeScript users, the `user` variable is automatically inferred
-to have the following type:
+In the following code, the `user` variable is automatically inferred to have
+the following TypeScript type:
 
     {
       id: number,
       name: string,
-      login: string,
-      hireable: boolean
     }
 
-If the data fails to validate, an error will be thrown.
 */
+const user = User.assert(data);
 
-try {
-  const user = User.assert(data);
-} catch(e) {
-  console.log(`Data ${data} did not match the User type`);
-}
-
-// For TypeScript users, you can get a reference to the inferred
-// type for Users using the following type helper:
+/*
+ * You can get a reference to the inferred type for Users using the following
+ * type helper:
+ */
 type UserType = t.GetType<typeof User>;
 
-// This allows you to write typed function that operate on users
-// like so:
+// This allows you to write typed function that operate on users like so:
 function update(user: UserType) {
   // ...
 }
 ```
 
-Let's compare the User validation code to the equivalent JSON Schema:
+## Comparisons
+
+Let's compare a longer, more realistic sample of user validation code to the
+equivalent JSON Schema:
 
 #### Structural:
 ```typescript
