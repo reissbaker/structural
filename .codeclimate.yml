@@ -1,0 +1,6 @@
+version: "2"
+checks:
+  # wow this check is so bad
+  # infinity false positives
+  similar-code:
+    enabled: false
