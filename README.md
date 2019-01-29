@@ -25,12 +25,12 @@ Structural's type system strives to support every feature of TypeScript's
 compile-time type system, but at runtime. This includes support for the
 following advanced features:
 
-* _Generics._
-* _Null safety:_ if you say something is a string, it will never be `null` or
+* __Generics.__
+* __Null safety:__ if you say something is a string, it will never be `null` or
   `undefined`.
-* _Structural subtyping:_ if `Person` records are defined by having a `name`,
+* __Structural subtyping:__ if `Person` records are defined by having a `name`,
   an object with both a `name` and an `eyeColor` is a valid `Person`.
-* _Algebraic data types:_ use `.and` and `.or` on types to compose them via
+* __Algebraic data types:__ use `.and` and `.or` on types to compose them via
   type intersections or unions.
 
 Here's a simple example:
