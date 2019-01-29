@@ -38,7 +38,7 @@ const User = t.subtype({
 const json = await fetch(...);
 const data = JSON.parse(data);
 
-//Assert the data matches the User type.
+// Assert the data matches the User type.
 try {
   const user = User.assert(data);
 } catch(e) {
