@@ -6,7 +6,10 @@
 Structural is a __runtime type checker__ for JavaScript and TypeScript that
 allows you to execute type-checking code on data you only have access to at
 runtime, like JSON data from network requests, YAML files from disk, or the
-results of SQL queries.
+results of SQL queries. Structural is written in TypeScript and has deep
+integration with its type system, allow TypeScript users to automatically get
+compile-time type inference for their Structural types in addition to runtime
+type checking.
 
 Typically with data received at runtime, you're forced to do one of the
 following:
