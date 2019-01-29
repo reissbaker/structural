@@ -2,7 +2,8 @@
   Structural
 </h1>
 
-[![CircleCI](https://img.shields.io/circleci/project/github/reissbaker/structural/master.svg)](https://circleci.com/gh/reissbaker/structural)
+[![npm version](https://badge.fury.io/js/structural.svg)](https://badge.fury.io/js/structural)
+[![CircleCI](https://circleci.com/gh/reissbaker/structural.svg?style=svg)](https://circleci.com/gh/reissbaker/structural)
 [![Maintainability](https://api.codeclimate.com/v1/badges/2e3709dce0e6e5e44217/maintainability)](https://codeclimate.com/github/reissbaker/structural/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/2e3709dce0e6e5e44217/test_coverage)](https://codeclimate.com/github/reissbaker/structural/test_coverage)
 
