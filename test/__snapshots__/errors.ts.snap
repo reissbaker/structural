@@ -1,0 +1,39 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`error integration tests either enumerates the missed types 1`] = `
+"given value
+  { owner:
+     { username: 'the duke', age: 42, email: 'duke.nuke@example.com' },
+    contents:
+     [ { text: 'Those who do not study history are doomed to repeat it',
+         author: 'Albert Einstien',
+         date: 1970-01-01T00:00:02.001Z },
+       { uri: 'example.com',
+         alt: 'Mr. Doctor Albert Einstien wearing a tweed jacket' } ] }
+did not match expected type
+  { owner: { username: string,
+      age?: number,
+      email: string & validate(has @ symbol, (val) => !!val.match(/@/)) },
+    contents: Array<{ text: string, author: string, date?: Date } |
+    { uri: string & validate(starts with http, (val) => !!val.match(/^http/)),
+      alt: string }> }
+because: at .contents[1]: given value
+    { uri: 'example.com',
+      alt: 'Mr. Doctor Albert Einstien wearing a tweed jacket' }
+  did not match expected type
+    { text: string, author: string, date?: Date } |
+    { uri: string & validate(starts with http, (val) => !!val.match(/^http/)),
+      alt: string }
+  because: matched none of 2 types:
+    | { text: string, author: string, date?: Date }
+      failed multiple checks:
+      - at .text: given value \`undefined\` did not match expected type \`string\`:
+        key missing
+      - at .author: given value \`undefined\` did not match expected type \`string\`:
+        key missing
+    | { uri: string & validate(starts with http, (val) => !!val.match(/^http/)),
+        alt: string }
+      at .uri: given value \`'example.com'\` did not match expected type
+        validate(starts with http, (val) => !!val.match(/^http/))
+      because: validation returned false"
+`;
