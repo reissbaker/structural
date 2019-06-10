@@ -37,3 +37,15 @@ because: at .contents[1]: given value
         validate(starts with http, (val) => !!val.match(/^http/))
       because: validation returned false"
 `;
+
+exports[`error integration tests exact prints fields nice 1`] = `
+"given value
+  { text: 'Those who do not study history are doomed to repeat it',
+    author: 'Albert Einstien',
+    date: 1970-01-01T00:00:02.001Z,
+    badBoy: true }
+did not match expected type
+  { text: string, author: string, date?: Date }
+because: at .badBoy: given value \`true\` did not match expected type \`never\`:
+    unknown key \`badBoy\` should not exist"
+`;

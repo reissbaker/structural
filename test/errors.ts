@@ -66,31 +66,18 @@ describe("error integration tests", () => {
     const val = value();
     (val.contents[1] as any).uri = 'example.com'
 
-    try {
+    expect(() => {
       Post.assert(val)
-      expect.hasAssertions()
-    } catch(error) {
-      expect(error.message).toMatchSnapshot()
-    }
+    }).toThrowErrorMatchingSnapshot()
   })
 
   test("exact prints fields nice", () => {
     const val = value().contents[0]
     ;(val as any).badBoy = true
 
-		const expected = `given value
-  { text: 'Those who do not study history are doomed to repeat it',
-    author: 'Albert Einstien',
-    date: 1970-01-01T00:00:02.001Z,
-    badBoy: true }
-did not match expected type
-  { text: string, author: string, date?: Date }
-because: at .badBoy: given value \`true\` did not match expected type \`never\`:
-    unknown key \`badBoy\` should not exist`
-
     expect(() => {
       Quote.assert(val)
-    }).toThrow(expected)
+    }).toThrowErrorMatchingSnapshot()
   })
 
   test("error contains a full .causes", () => {
