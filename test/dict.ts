@@ -42,3 +42,7 @@ test("rejects arrays", () => {
     check.assert([ ]);
   }).toThrow();
 });
+
+test("toString", () => {
+  expect(t.dict(t.any).toString()).toEqual("{ [key: string]: any }")
+})

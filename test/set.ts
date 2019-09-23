@@ -28,3 +28,7 @@ test("rejects non-sets", () => {
     check.assert(null);
   }).toThrow();
 });
+
+test("toString", () => {
+  expect(t.set(t.any).toString()).toEqual("Set<any>")
+})

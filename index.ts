@@ -1,4 +1,10 @@
-export * from "./lib/result";
+export {
+  // Because lib/result has a bunch of pretty-printing helpers and such,
+  // we only export specific thigns  publically
+  Result,
+  Err,
+  StructuralError,
+} from "./lib/result";
 export * from "./lib/type";
 export * from "./lib/get-type";
 export * from "./lib/match"

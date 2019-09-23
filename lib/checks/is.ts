@@ -1,4 +1,4 @@
-import { Err, Result } from "../result";
+import { Result } from "../result";
 import { Type } from "../type";
 
 type Guard<T> = (val: any) => val is T
@@ -15,7 +15,11 @@ export class Is<T> extends Type<T> {
 
   check(val: any): Result<T> {
     if(this.isT(val)) return val;
-    return new Err(`${val} is not a ${this.name} (guard failed)`)
+    return this.err(`guard failed`, val)
+  }
+
+  toString() {
+    return `is(${this.name}, ${this.isT})`
   }
 }
 

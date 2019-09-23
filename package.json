@@ -30,5 +30,8 @@
     "/build",
     "/lib",
     "/test"
-  ]
+  ],
+  "dependencies": {
+    "@types/node": "^10.12.18"
+  }
 }

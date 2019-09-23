@@ -31,3 +31,11 @@ test("works as a guard w/ type inference", () => {
 
   expect(success).toBe(true)
 })
+
+test("toString", () => {
+  class Doggo {
+    bark() { return true }
+  }
+  const check = t.is("a doggo", (val: any): val is Doggo => val instanceof Doggo)
+  expect(check.toString()).toEqual("is(a doggo, (val) => val instanceof Doggo)")
+})

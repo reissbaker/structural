@@ -1,4 +1,4 @@
-import { Err, Result } from "../result";
+import { Result } from "../result";
 import { Type } from "../type";
 
 export class Value<T> extends Type<T> {
@@ -10,7 +10,17 @@ export class Value<T> extends Type<T> {
 
   check(val: any): Result<T> {
     if(val === this.val) return val;
-    return new Err(`${val} is not equal to ${this.val}`);
+    return this.err('not equal', val)
+  }
+
+  toString() {
+    if (typeof this.val === 'string' ||
+        typeof this.val === 'number' ||
+        this.val === null
+       ) {
+      return JSON.stringify(this.val)
+    }
+    return `=== ${this.val}`
   }
 }
 

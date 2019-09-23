@@ -195,3 +195,12 @@ describe('slice', () => {
     }).toThrow();
   });
 });
+
+test("toString", () => {
+  const check = t.subtype({
+    name: t.str,
+    age: t.optional(t.num)
+  })
+
+  expect(check.toString()).toEqual(`{ name: string, age?: number }`)
+})

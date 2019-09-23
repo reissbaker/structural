@@ -247,4 +247,11 @@ describe("and", () => {
       check.assert({});
     }).toThrow();
   });
+
+  test("toString", () => {
+    const check = t.num.or(t.str)
+    expect(check.toString()).toEqual("number | string")
+
+    expect(t.num.and(t.value(5)).toString()).toEqual("number & 5")
+  })
 });
