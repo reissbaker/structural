@@ -162,8 +162,10 @@ function fromStruct(s: Struct<any>, opts: ToTypescriptOpts) {
       lines.push(keyIndent + formatCommentString(stripped.comments.join("\n"), keyOpts));
     }
     keyType.push(toTS(stripped.inner, keyOpts));
+    keyType.push(",");
     lines.push(keyIndent + keyType.join(""));
   }
+  lines.push(indent(opts) + "}");
 
   return lines.join("\n");
 }
