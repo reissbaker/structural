@@ -69,15 +69,21 @@ function fromComment(c: Comment<any>, opts: ToTypescriptOpts) {
 
 function formatCommentString(commentStr: string, opts: ToTypescriptOpts) {
   const i = indent(opts);
-  if(commentStr.indexOf("\n") < 0) {
-    return `// ${commentStr}`;
+
+  const commentLines = commentStr.split("\n").map(line => {
+    return line.trim();
+  }).filter(line => line !== "");
+
+  if(commentLines.length === 0) return "";
+  if(commentLines.length === 1) {
+    return `// ${commentLines[0]}`;
   }
 
   const lines = [ '/*' ]
-  for(const line of commentStr.split("\n")) {
+  for(const line of commentLines) {
     lines.push(`${i} * ${line.trim()}`);
   }
-  lines.push(`${i}*/`);
+  lines.push(`${i} */`);
   return lines.join("\n");
 }
 
@@ -130,9 +136,9 @@ function fromInstanceOf(i: InstanceOf<any>) {
 
 function fromValue(v: Value<any>) {
   const vType = typeof v.val;
-  if(vType !== "string" && vType !== "number" && v.val !== null && v.val !== undefined) {
+  if(vType !== "string" && vType !== "number" && vType !== "boolean" && v.val !== null && v.val !== undefined) {
     throw new Error(
-      "Only string, numeric, undefined, and null value types can be auto-converted to TypeScript"
+      "Only string, numeric, undefined, boolean, and null value types can be auto-converted to TypeScript"
     );
   }
   if(vType === "string") return JSON.stringify(v.val);
@@ -151,19 +157,26 @@ function fromStruct(s: Struct<any>, opts: ToTypescriptOpts) {
     indentLevel: opts.indentLevel + 1,
   };
   const keyIndent = indent(keyOpts);
+  const keys = Object.keys(s.definition);
 
-  for(const key in s.definition) {
+  for(let i = 0; i < keys.length; i++) {
+    const key = keys[i];
     const keyType = [ key ];
     const val = s.definition[key];
     if(val instanceof OptionalKey) keyType.push("?");
     keyType.push(": ");
     const stripped = stripOuterComments(val);
     if(stripped.comments.length > 0) {
+      // Visually separate the start of a commented field unless it's the first field
+      if(i !== 0) lines.push("");
+      // Put the comment on the line above the key
       lines.push(keyIndent + formatCommentString(stripped.comments.join("\n"), keyOpts));
     }
     keyType.push(toTS(stripped.inner, keyOpts));
     keyType.push(",");
     lines.push(keyIndent + keyType.join(""));
+    // Visually separate the end of a commented field, unless it's the last field
+    if(stripped.comments.length > 0 && i !== keys.length - 1) lines.push("");
   }
   lines.push(indent(opts) + "}");
 
@@ -180,10 +193,16 @@ function stripOuterComments(t: Kind | OptionalKey<any>): StrippedComments {
   if(t instanceof Comment) {
     const inner = stripOuterComments(t.wrapped);
     return {
-      comments: [ t.commentStr, ...inner.comments ],
+      comments: [ ...inner.comments, t.commentStr ],
       inner: inner.inner,
     }
   }
+
+  if(t instanceof Intersect) {
+    if(t.left instanceof Validation) return stripOuterComments(new Comment(t.left.desc, t.r));
+    if(t.r instanceof Validation) return stripOuterComments(new Comment(t.r.desc, t.left));
+  }
+
   return {
     comments: [],
     inner: t,
