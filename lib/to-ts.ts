@@ -193,10 +193,16 @@ function stripOuterComments(t: Kind | OptionalKey<any>): StrippedComments {
   if(t instanceof Comment) {
     const inner = stripOuterComments(t.wrapped);
     return {
-      comments: [ t.commentStr, ...inner.comments ],
+      comments: [ ...inner.comments, t.commentStr ],
       inner: inner.inner,
     }
   }
+
+  if(t instanceof Intersect) {
+    if(t.left instanceof Validation) return stripOuterComments(new Comment(t.left.desc, t.r));
+    if(t.r instanceof Validation) return stripOuterComments(new Comment(t.r.desc, t.left));
+  }
+
   return {
     comments: [],
     inner: t,

@@ -1,6 +1,6 @@
 import * as t from "..";
 
-describe("subtype", () => {
+describe("converting to typescript", () => {
   test("converts to typescript", () => {
     expect(t.toTypescript(t.subtype({
       hi: t.str,
@@ -9,6 +9,7 @@ describe("subtype", () => {
       }),
     }))).toEqual("{\n  hi: string,\n  world: {\n    foo: number,\n  },\n}");
   });
+
   test("puts value comments above the line", () => {
     expect(t.toTypescript(t.subtype({
       foo: t.subtype({
@@ -16,6 +17,7 @@ describe("subtype", () => {
       }),
     }))).toEqual("{\n  foo: {\n    // a comment\n    bar: string,\n  },\n}");
   });
+
   test("puts multi-line value comments above the line with correct indentation", () => {
     expect(t.toTypescript(t.subtype({
       foo: t.subtype({
@@ -32,6 +34,14 @@ describe("subtype", () => {
     }))).toEqual("{\n  a: string,\n\n  // sup\n  b: string,\n\n  c: string,\n}")
   });
 
+  test("combines comments and validations into a single comment block", () => {
+    expect(t.toTypescript(t.subtype({
+      a: t.num.validate("Must be between 1-20.", num => num >= 1 && num <= 20).comment("Level.")
+    }))).toEqual("{\n  /*\n   * Must be between 1-20.\n   * Level.\n   */\n  a: number,\n}");
+  });
+});
+
+describe("subtype", () => {
   test("accepts exact matches", () => {
     const check = t.subtype({
       hi: t.str,
