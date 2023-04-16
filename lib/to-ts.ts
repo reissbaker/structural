@@ -193,7 +193,7 @@ function stripOuterComments(t: Kind | OptionalKey<any>): StrippedComments {
   if(t instanceof Comment) {
     const inner = stripOuterComments(t.wrapped);
     return {
-      comments: [ ...inner.comments, t.commentStr ],
+      comments: [ t.commentStr, ...inner.comments ],
       inner: inner.inner,
     }
   }
