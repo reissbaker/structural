@@ -18,14 +18,14 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "yarn.lock" }}
+          - v1-dependencies-{{ checksum "package-lock.json" }}
 
-      - run: yarn install
+      - run: npm install
 
       - save_cache:
           paths:
             - node_modules
-          key: v1-dependencies-{{ checksum "yarn.lock" }}
+          key: v1-dependencies-{{ checksum "package-lock.json" }}
 
       - run:
           name: "Setup CodeClimate test reporter"
