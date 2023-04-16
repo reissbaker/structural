@@ -37,7 +37,7 @@ describe("converting to typescript", () => {
   test("combines comments and validations into a single comment block", () => {
     expect(t.toTypescript(t.subtype({
       a: t.num.validate("Must be between 1-20.", num => num >= 1 && num <= 20).comment("Level.")
-    }))).toEqual("{\n  /*\n   * Must be between 1-20.\n   * Level.\n   */\n  a: number,\n}");
+    }))).toEqual("{\n  /*\n   * Level.\n   * Must be between 1-20.\n   */\n  a: number,\n}");
   });
 });
 
