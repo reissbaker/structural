@@ -1,6 +1,10 @@
 import * as t from "..";
 
 describe("num", () => {
+  test("converts to typescript", () => {
+    expect(t.toTypescript(t.num)).toEqual("number");
+  });
+
   test("accepts numbers", () => {
     t.num.assert(1);
   });
@@ -17,6 +21,10 @@ describe("num", () => {
 });
 
 describe("str", () => {
+  test("converts to typescript", () => {
+    expect(t.toTypescript(t.str)).toEqual("string");
+  });
+
   test("accepts strings", () => {
     t.str.assert("hi");
   });
@@ -29,6 +37,10 @@ describe("str", () => {
 });
 
 describe("bool", () => {
+  test("converts to typescript", () => {
+    expect(t.toTypescript(t.bool)).toEqual("boolean");
+  });
+
   test("accepts booleans", () => {
     t.bool.assert(true);
   });
@@ -41,6 +53,10 @@ describe("bool", () => {
 });
 
 describe("fn", () => {
+  test("converts to typescript", () => {
+    expect(t.toTypescript(t.fn)).toEqual("Function");
+  });
+
   test("accepts functions", () => {
     t.fn.assert(() => {});
   });
@@ -53,6 +69,10 @@ describe("fn", () => {
 });
 
 describe("sym", () => {
+  test("converts to typescript", () => {
+    expect(t.toTypescript(t.sym)).toEqual("Symbol");
+  });
+
   test("accepts symbols", () => {
     t.sym.assert(Symbol());
   });
@@ -65,6 +85,10 @@ describe("sym", () => {
 });
 
 describe("undef", () => {
+  test("converts to typescript", () => {
+    expect(t.toTypescript(t.undef)).toEqual("undefined");
+  });
+
   test("accepts undefined", () => {
     t.undef.assert(undefined);
   });
@@ -77,6 +101,10 @@ describe("undef", () => {
 });
 
 describe("nil", () => {
+  test("converts to typescript", () => {
+    expect(t.toTypescript(t.nil)).toEqual("null");
+  });
+
   test("accepts null", () => {
     t.nil.assert(null);
   });
@@ -89,6 +117,10 @@ describe("nil", () => {
 });
 
 describe("obj", () => {
+  test("converts to typescript", () => {
+    expect(t.toTypescript(t.obj)).toEqual("Object");
+  });
+
   test("accepts objects", () => {
     t.obj.assert({});
     t.obj.assert({ five: "hi" });
@@ -103,6 +135,10 @@ describe("obj", () => {
 });
 
 describe("maybe", () => {
+  test("converts to typescript", () => {
+    expect(t.toTypescript(t.maybe(t.num))).toEqual("number\n  | null");
+  });
+
   test("accepts the matching value", () => {
     const check = t.maybe(t.num);
     check.assert(5);

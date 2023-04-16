@@ -1,5 +1,9 @@
 import * as t from "..";
 
+test("converts to typescript", () => {
+  expect(t.toTypescript(t.never)).toEqual("never");
+});
+
 // what a test.
 test("accepts nothing", () => {
   expect(() => {

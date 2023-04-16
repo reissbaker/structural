@@ -1,5 +1,9 @@
 import * as t from "..";
 
+test("converts to typescript", () => {
+  expect(t.toTypescript(t.array(t.bool))).toEqual("Array<boolean>");
+});
+
 test("accepts the empty array", () => {
   const check = t.array(t.num);
   check.assert([]);

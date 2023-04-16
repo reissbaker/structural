@@ -1,5 +1,9 @@
 import * as t from "..";
 
+test("converts to typescript", () => {
+  expect(t.toTypescript(t.set(t.num))).toEqual("Set<number>");
+});
+
 test("accepts values that match", () => {
   const check = t.set(t.num);
   const set = new Set<number>();
