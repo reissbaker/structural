@@ -1,5 +1,11 @@
 import * as t from "..";
 
+test("converts to typescript", () => {
+  expect(
+    t.toTypescript(t.num.validate("greater than zero", (num) => num > 0))
+  ).toEqual("// greater than zero\nnumber");
+});
+
 test("passes when the fn returns true", () => {
   const check = t.num.validate("between five and ten", (num) => {
     return num > 5 && num < 10;

@@ -1,5 +1,11 @@
 import * as t from "..";
 
+test("converts to typescript", () => {
+  expect(t.toTypescript(
+    t.is("string", (val: any): val is string => typeof val === "string")
+  )).toEqual("string");
+});
+
 test("passes when the fn returns true", () => {
   const check = t.is('string', (val: any): val is string => typeof val === 'string')
   check.assert('foo');

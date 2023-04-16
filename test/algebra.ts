@@ -1,6 +1,10 @@
 import * as t from "..";
 
 describe("or", () => {
+  test("converts both sides to typescript", () => {
+    expect(t.toTypescript(t.num.or(t.str))).toEqual("number\n  | string");
+  });
+
   test("accepts either of the given checks", () => {
     const check = t.num.or(t.str);
     check.assert(5);

@@ -17,6 +17,7 @@ export * from "./lib/checks/is";
 export * from "./lib/checks/never";
 
 export * from "./lib/kind";
+export * from "./lib/to-ts";
 
 // TODO: test type inference. one way to do this: build up a struktural type, get the inner type
 // with GetType, and assign it something that should fail the type checker. assert the type checker

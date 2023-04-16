@@ -1,6 +1,29 @@
 import * as t from "..";
 
 describe("subtype", () => {
+  test("converts to typescript", () => {
+    expect(t.toTypescript(t.subtype({
+      hi: t.str,
+      world: t.subtype({
+        foo: t.num,
+      }),
+    }))).toEqual("{\n  hi: string,\n  world: {\n    foo: number,\n  },\n}");
+  });
+  test("puts value comments above the line", () => {
+    expect(t.toTypescript(t.subtype({
+      foo: t.subtype({
+        bar: t.str.comment("a comment"),
+      }),
+    }))).toEqual("{\n  foo: {\n    // a comment\n    bar: string,\n  },\n}");
+  });
+  test("puts multi-line value comments above the line with correct indentation", () => {
+    expect(t.toTypescript(t.subtype({
+      foo: t.subtype({
+        bar: t.str.comment("a comment\nabout this"),
+      }),
+    }))).toEqual("{\n  foo: {\n    /*\n     * a comment\n     * about this\n    */\n    bar: string,\n  },\n}");
+  });
+
   test("accepts exact matches", () => {
     const check = t.subtype({
       hi: t.str,

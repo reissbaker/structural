@@ -11,7 +11,9 @@ runtime, like JSON data from network requests, YAML files from disk, or the
 results of SQL queries. Structural is written in TypeScript and has deep
 integration with its type system, allow TypeScript users to automatically get
 compile-time type inference for their Structural types in addition to runtime
-type checking.
+type checking. Structural types can also be automatically converted to actual,
+executable TypeScript automatically, for generating documentation or
+integrating with tools that understand TS type syntax.
 
 ### Table of contents
 
@@ -113,7 +115,110 @@ function update(user: UserType) {
 }
 ```
 
-## Comparisons
+You can automatically convert Structural types to TypeScript types with the
+`toTypescript` function. For example:
+
+```typescript
+const ts = t.toTypescript(t.subtype({
+  id: t.num,
+}));
+```
+
+The `ts` string would be:
+
+```typescript
+{
+  id: number,
+}
+```
+
+The `toTypescript` function has a couple of useful options for generating
+TypeScript, which are as follows:
+
+### `assignToType`
+
+The `assignToType` option auto-generates the syntax to assign a type a name,
+and inserting a semicolon after the type definition. For example:
+
+```typescript
+const ts = t.toTypescript(t.either(t.num, t.str), {
+  assignToType: "id",
+});
+```
+
+This would result in `ts` having the following value:
+
+```typescript
+type id = number
+  | string;
+```
+
+### `useReference`
+
+The `useReference` option helps readability of deeply-nested types. Let's first
+look at an example without `useReference`:
+
+```typescript
+const Customer = t.subtype({
+  orders: t.num,
+});
+const Business = t.subtype({
+  customers: t.array(Customer),
+});
+
+const customerTs = t.toTypescript(Customer, { assignToType: "Customer" });
+const businessTs = t.toTypescript(Business, { assignToType: "Business" });
+```
+
+This would generate the following two type definitions:
+
+```typescript
+type Customer = {
+  orders: number,
+};
+type Business = {
+  customers: Array<{
+    orders: number,
+  }>,
+};
+```
+
+While that's technically *correct*, it's pretty ugly from a readability
+perspective. We'd much rather generate something like:
+
+```typescript
+type Customer = {
+  orders: number,
+};
+type Business = {
+  customers: Array<Customer>,
+};
+```
+
+With `useReference`, we can generate exactly that:
+
+```typescript
+const Customer = t.subtype({
+  orders: t.num,
+});
+const Business = t.subtype({
+  customers: t.array(Customer),
+});
+
+const customerTs = t.toTypescript(Customer, { assignToType: "Customer" });
+const businessTs = t.toTypescript(Business, {
+  assignToType: "Business"
+  useReference: {
+    Customer,
+  },
+});
+```
+
+Any value in the `useReference` hash will be replaced in the TypeScript output
+with the key name. In this case, we're replacing `Customer` with `"Customer"`
+(and using object shorthand syntax to make that relatively ergonomic).
+
+## Comparisons with other frameworks
 
 Let's compare a longer, more realistic sample of user validation code to the
 equivalent JSON Schema:

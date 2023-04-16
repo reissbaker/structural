@@ -1,4 +1,4 @@
-import { Either, Intersect, Validation } from "./type";
+import { Comment, Either, Intersect, Validation } from "./type";
 import { TypeOf } from "./checks/type-of";
 import { InstanceOf } from "./checks/instance-of";
 import { Value } from "./checks/value";
@@ -25,4 +25,5 @@ export type Kind = Any
                  | Intersect<any, any>
                  | Validation<any>
                  | Is<any>
+                 | Comment<any>
                  ;

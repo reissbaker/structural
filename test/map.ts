@@ -1,5 +1,9 @@
 import * as t from "..";
 
+test("converts to typescript", () => {
+  expect(t.toTypescript(t.map(t.num, t.bool))).toEqual("Map<number, boolean>");
+});
+
 test("accepts empty maps", () => {
   const check = t.map(t.num, t.str);
   check.assert(new Map());
