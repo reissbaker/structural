@@ -157,19 +157,26 @@ function fromStruct(s: Struct<any>, opts: ToTypescriptOpts) {
     indentLevel: opts.indentLevel + 1,
   };
   const keyIndent = indent(keyOpts);
+  const keys = Object.keys(s.definition);
 
-  for(const key in s.definition) {
+  for(let i = 0; i < keys.length; i++) {
+    const key = keys[i];
     const keyType = [ key ];
     const val = s.definition[key];
     if(val instanceof OptionalKey) keyType.push("?");
     keyType.push(": ");
     const stripped = stripOuterComments(val);
     if(stripped.comments.length > 0) {
+      // Visually separate the start of a commented field unless it's the first field
+      if(i !== 0) lines.push("");
+      // Put the comment on the line above the key
       lines.push(keyIndent + formatCommentString(stripped.comments.join("\n"), keyOpts));
     }
     keyType.push(toTS(stripped.inner, keyOpts));
     keyType.push(",");
     lines.push(keyIndent + keyType.join(""));
+    // Visually separate the end of a commented field, unless it's the last field
+    if(stripped.comments.length > 0 && i !== keys.length - 1) lines.push("");
   }
   lines.push(indent(opts) + "}");
 

@@ -24,6 +24,14 @@ describe("subtype", () => {
     }))).toEqual("{\n  foo: {\n    /*\n     * a comment\n     * about this\n     */\n    bar: string,\n  },\n}");
   });
 
+  test("separates out fields in the middle of a fieldset the have comments", () => {
+    expect(t.toTypescript(t.subtype({
+      a: t.str,
+      b: t.str.comment("sup"),
+      c: t.str,
+    }))).toEqual("{\n  a: string,\n\n  // sup\n  b: string,\n\n  c: string,\n}")
+  });
+
   test("accepts exact matches", () => {
     const check = t.subtype({
       hi: t.str,
