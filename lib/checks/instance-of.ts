@@ -12,7 +12,7 @@ export class InstanceOf<T> extends Type<T> {
   }
 
   check(val: any): Result<T> {
-    if(val instanceof this.klass) return val;
+    if(val instanceof this.klass) return val as Result<T>;
     return new Err(`${val} is not an instance of ${this.klass}`);
   }
 }

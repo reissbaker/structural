@@ -1,31 +1,16 @@
 # CircleCI conf file
-#
-# Modified from: https://circleci.com/docs/2.0/language-javascript/
-version: 2
+version: 2.1
+orbs:
+  node: circleci/node@5.0.2
 jobs:
   build:
+    executor: node/default
     environment:
       CC_TEST_REPORTER_ID: 339e5e314de7e8b7ae77047209233a42349cc928b2405aeef2d9dd33f68f1f98
-
-    docker:
-      - image: circleci/node:8.15
-
-    working_directory: ~/repo
-
     steps:
       - checkout
-
-      # Download and cache dependencies
-      - restore_cache:
-          keys:
-          - v1-dependencies-{{ checksum "yarn.lock" }}
-
-      - run: yarn install
-
-      - save_cache:
-          paths:
-            - node_modules
-          key: v1-dependencies-{{ checksum "yarn.lock" }}
+      - node/install-packages:
+        pkg-manager: npm
 
       - run:
           name: "Setup CodeClimate test reporter"
@@ -34,12 +19,12 @@ jobs:
             chmod +x ./cc-test-reporter
 
       # build
-      - run: yarn run tsc
+      - run: npm run tsc
 
       # run tests
       - run:
           name: "Run tests"
           command: |
             ./cc-test-reporter before-build
-            yarn test
+            npm test
             ./cc-test-reporter after-build -t lcov --exit-code $?
