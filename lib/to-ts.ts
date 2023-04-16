@@ -25,7 +25,7 @@ export type TypescriptUserOpts = Partial<ToTypescriptOpts> & {
   assignToType?: string,
 };
 
-export default function toTypescript(type: Kind, userOpts: TypescriptUserOpts = {}): string {
+export function toTypescript(type: Kind, userOpts: TypescriptUserOpts = {}): string {
   const opts = Object.assign({ indent: "  ", indentLevel: 0 }, userOpts);
   // assignToType is only valid at the top level, so delete it if it exists
   delete opts.assignToType;
