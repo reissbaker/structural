@@ -34,12 +34,12 @@ jobs:
             chmod +x ./cc-test-reporter
 
       # build
-      - run: yarn run tsc
+      - run: npm run tsc
 
       # run tests
       - run:
           name: "Run tests"
           command: |
             ./cc-test-reporter before-build
-            yarn test
+            npm test
             ./cc-test-reporter after-build -t lcov --exit-code $?
