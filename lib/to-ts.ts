@@ -3,7 +3,7 @@ import { TypeOf } from "./checks/type-of";
 import { InstanceOf } from "./checks/instance-of";
 import { Value } from "./checks/value";
 import { Arr } from "./checks/array";
-import { Struct } from "./checks/struct";
+import { Struct, OptionalKey } from "./checks/struct";
 import { Dict } from "./checks/dict";
 import { MapType } from "./checks/map";
 import { SetType } from "./checks/set";
@@ -141,10 +141,48 @@ function fromArr(a: Arr<any>, opts: ToTypescriptOpts) {
   return `Array<${toTS(a.elementType, opts)}>`;
 }
 
-// TODO: Note that what's very annoying about structs is you have to lift comments on values to
-// above the key, rather than doing key: //the comment\nthe value
 function fromStruct(s: Struct<any>, opts: ToTypescriptOpts) {
-  return "";
+  const lines = [ "{" ];
+  const keyOpts = {
+    ...opts,
+    indentLevel: opts.indentLevel + 1,
+  };
+  const keyIndent = indent(keyOpts);
+
+  for(const key in s.definition) {
+    const keyType = [ key ];
+    const val = s.definition[key];
+    if(val instanceof OptionalKey) keyType.push("?");
+    keyType.push(": ");
+    const stripped = stripOuterComments(val);
+    if(stripped.comments.length > 0) {
+      lines.push(keyIndent + formatCommentString(stripped.comments.join("\n"), keyOpts));
+    }
+    keyType.push(toTS(stripped.inner, keyOpts));
+    lines.push(keyIndent + keyType.join(""));
+  }
+
+  return lines.join("\n");
+}
+
+type StrippedComments = {
+  comments: string[],
+  inner: Kind,
+};
+
+function stripOuterComments(t: Kind | OptionalKey<any>): StrippedComments {
+  if(t instanceof OptionalKey) return stripOuterComments(t.type);
+  if(t instanceof Comment) {
+    const inner = stripOuterComments(t.wrapped);
+    return {
+      comments: [ t.commentStr, ...inner.comments ],
+      inner: inner.inner,
+    }
+  }
+  return {
+    comments: [],
+    inner: t,
+  };
 }
 
 function fromDict(d: Dict<any>, opts: ToTypescriptOpts) {
