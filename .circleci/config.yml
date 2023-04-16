@@ -9,7 +9,7 @@ jobs:
       CC_TEST_REPORTER_ID: 339e5e314de7e8b7ae77047209233a42349cc928b2405aeef2d9dd33f68f1f98
     steps:
       - checkout
-      - node/install-packages:
+      - node/install-packages: null
         pkg-manager: npm
 
       - run:
@@ -28,3 +28,5 @@ jobs:
             ./cc-test-reporter before-build
             npm test
             ./cc-test-reporter after-build -t lcov --exit-code $?
+    # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
+    resource_class: large
