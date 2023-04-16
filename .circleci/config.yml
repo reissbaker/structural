@@ -5,6 +5,8 @@ orbs:
 jobs:
   build:
     executor: node/default
+    environment:
+      CC_TEST_REPORTER_ID: 339e5e314de7e8b7ae77047209233a42349cc928b2405aeef2d9dd33f68f1f98
     steps:
       - checkout
       - node/install-packages:
