@@ -65,6 +65,15 @@ export abstract class Type<T> {
   validate(desc: string, fn: Validator<T>): Type<T> {
     return this.and(new Validation(desc, fn));
   }
+
+  /*
+   * Comments, for nice TypeScript exporting
+   * -----------------------------------------------------------------------------------------------
+   */
+
+  comment(comment: string): Type<T> {
+    return new Comment(comment, this);
+  }
 }
 
 function assert<T>(result: Result<T>): T {
@@ -82,6 +91,21 @@ function assert<T>(result: Result<T>): T {
  * class in order to extend it (since they themselves are Types).
  */
 
+/*
+ * ### Comment
+ *
+ * A type that delegates to the given type, but adds a comment when converted to TypeScript
+ */
+
+export class Comment<T> extends Type<T> {
+  constructor(readonly commentStr: string, readonly wrapped: Type<T>) {
+    super();
+  }
+
+  check(val: any): Result<T> {
+    return this.wrapped.check(val);
+  }
+}
 
 /*
  * ### Validation
