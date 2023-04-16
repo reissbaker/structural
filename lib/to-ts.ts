@@ -69,15 +69,21 @@ function fromComment(c: Comment<any>, opts: ToTypescriptOpts) {
 
 function formatCommentString(commentStr: string, opts: ToTypescriptOpts) {
   const i = indent(opts);
-  if(commentStr.indexOf("\n") < 0) {
-    return `// ${commentStr}`;
+
+  const commentLines = commentStr.split("\n").map(line => {
+    return line.trim();
+  }).filter(line => line !== "");
+
+  if(commentLines.length === 0) return "";
+  if(commentLines.length === 1) {
+    return `// ${commentLines[0]}`;
   }
 
   const lines = [ '/*' ]
-  for(const line of commentStr.split("\n")) {
+  for(const line of commentLines) {
     lines.push(`${i} * ${line.trim()}`);
   }
-  lines.push(`${i}*/`);
+  lines.push(`${i} */`);
   return lines.join("\n");
 }
 

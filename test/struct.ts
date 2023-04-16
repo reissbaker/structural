@@ -21,7 +21,7 @@ describe("subtype", () => {
       foo: t.subtype({
         bar: t.str.comment("a comment\nabout this"),
       }),
-    }))).toEqual("{\n  foo: {\n    /*\n     * a comment\n     * about this\n    */\n    bar: string,\n  },\n}");
+    }))).toEqual("{\n  foo: {\n    /*\n     * a comment\n     * about this\n     */\n    bar: string,\n  },\n}");
   });
 
   test("accepts exact matches", () => {
