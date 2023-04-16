@@ -24,7 +24,7 @@ describe("subtype", () => {
     }))).toEqual("{\n  foo: {\n    /*\n     * a comment\n     * about this\n     */\n    bar: string,\n  },\n}");
   });
 
-  test("separates out fields in the middle of a fieldset the have comments", () => {
+  test("separates out fields in the middle of a fieldset that have comments", () => {
     expect(t.toTypescript(t.subtype({
       a: t.str,
       b: t.str.comment("sup"),
