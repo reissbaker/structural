@@ -1,9 +1,20 @@
 import { Err, Result } from "../result";
 import { Type } from "../type";
 
+export type ValidTypeString = "undefined"
+                            | "object"
+                            | "boolean"
+                            | "number"
+                            | "bigint"
+                            | "string"
+                            | "symbol"
+                            | "function"
+                            ;
+
 export class TypeOf<T> extends Type<T> {
-  readonly typestring: string;
-  constructor(t: string) {
+  readonly typestring: ValidTypeString;
+
+  constructor(t: ValidTypeString) {
     super();
     this.typestring = t;
   }
@@ -14,6 +25,6 @@ export class TypeOf<T> extends Type<T> {
   }
 }
 
-export function typeOf<T>(t: string): TypeOf<T> {
+export function typeOf<T>(t: ValidTypeString): TypeOf<T> {
   return new TypeOf<T>(t);
 }
