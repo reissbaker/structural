@@ -129,12 +129,14 @@ function fromInstanceOf(i: InstanceOf<any>) {
 }
 
 function fromValue(v: Value<any>) {
-  const vType = typeof v;
-  if(vType !== "string" && vType !== "number") {
+  const vType = typeof v.val;
+  if(vType !== "string" && vType !== "number" && v.val !== null && v.val !== undefined) {
     throw new Error(
-      "Only string and numeric value types are eligible for conversion to TypeScript"
+      "Only string, numeric, undefined, and null value types can be auto-converted to TypeScript"
     );
   }
+  if(vType === "string") return JSON.stringify(v.val);
+
   return `${v.val}`;
 }
 
