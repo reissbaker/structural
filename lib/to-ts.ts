@@ -124,7 +124,8 @@ function fromTypeof(t: TypeOf<any>): string {
 }
 
 function fromInstanceOf(i: InstanceOf<any>) {
-  return `${i.klass}`;
+  if(!i.klass.name) throw new Error("Can't convert anonymous classes to TypeScript");
+  return `${i.klass.name}`;
 }
 
 function fromValue(v: Value<any>) {
