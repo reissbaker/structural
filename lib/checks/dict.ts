@@ -7,9 +7,13 @@ type RawDict<V> = {
 
 export class Dict<V> extends Type<RawDict<V>> {
   readonly valueType: Type<V>;
-  constructor(v: Type<V>) {
+  constructor(v: Type<V>, readonly namedKey: string = "key") {
     super();
     this.valueType = v;
+  }
+
+  keyName(key: string): Dict<V> {
+    return new Dict(this.valueType, key);
   }
 
   check(val: any): Result<RawDict<V>> {

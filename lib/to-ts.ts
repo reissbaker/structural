@@ -214,7 +214,7 @@ function fromDict(d: Dict<any>, opts: ToTypescriptOpts) {
   const valString = toTS(d.valueType, {...opts, indentLevel: opts.indentLevel + 1});
 
   // For single-line values, return a single-line dict
-  if(valString.indexOf("\n") < 0) return `{[key: string]: ${valString}}`;
+  if(valString.indexOf("\n") < 0) return `{[${d.namedKey}: string]: ${valString}}`;
 
   // For multiline values, return a multiline dict
   return [
