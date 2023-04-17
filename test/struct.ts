@@ -34,6 +34,14 @@ describe("converting to typescript", () => {
     }))).toEqual("{\n  a: string,\n\n  // sup\n  b: string,\n\n  c: string,\n}")
   });
 
+  test("doesn't double-separate fields in the middle of a fieldset that have comments", () => {
+    expect(t.toTypescript(t.subtype({
+      a: t.str,
+      b: t.str.comment("sup"),
+      c: t.str.comment("yo"),
+    }))).toEqual("{\n  a: string,\n\n  // sup\n  b: string,\n\n  // yo\n  c: string,\n}")
+  });
+
   test("combines comments and validations into a single comment block", () => {
     expect(t.toTypescript(t.subtype({
       a: t.num.validate("Must be between 1-20.", num => num >= 1 && num <= 20).comment("Level.")
