@@ -371,8 +371,8 @@ because `alive` wasn't defined in the Intern type.
 
 ## Generating TypeScript
 
-You can automatically convert Structural types to TypeScript types with the
-`toTypescript` function. For example:
+You can automatically generate valid TypeScript as source code strings from
+Structural types with the `toTypescript` function. For example:
 
 ```typescript
 const ts = t.toTypescript(t.subtype({
@@ -408,7 +408,7 @@ type User = {
 ```
 
 If you pass multiple types into the hash, the string will contain all of the
-types; for example:
+types in the order they appeared in the hash; for example:
 
 ```typescript
 const Customer = t.subtype({
@@ -442,18 +442,18 @@ methods are no-ops at runtime, but help readability for your generated
 TypeScript. Here's an example of a comment:
 
 ```typescript
-t.subtype({
+const User = t.subtype({
   name: t.str.comment("The user's full name"),
 });
 ```
 
-Running `t.toTypescript` on that struct would generate:
+Running `t.toTypescript({ User })` on that struct would generate:
 
 ```typescript
-{
+type User = {
   // The user's full name
   name: string,
-}
+};
 ```
 
 Multiline comments are also supported and have generally-sensible output
@@ -485,10 +485,11 @@ Which would be generated as:
 By default, the `dict` type will name its keys `key`, like so:
 
 ```typescript
-t.toTypescript(t.dict(t.num), { assignToType: "NumericDict" });
-
-// Generates:
-type NumericDict = {[key: string]: number};
+const OrderCount = t.dict(t.num);
+t.toTypescript({ OrderCount });
+```
+```typescript
+type OrderCount = {[key: string]: number};
 ```
 
 Depending on your dictionary, you may want to use a more meaningful name than
@@ -496,23 +497,22 @@ just `key`. For example, if you're mapping customer names to order counts, it
 might be useful to have the key be named `customer` for readability:
 
 ```typescript
-t.toTypescript(
-  t.dict(t.num).keyName("customer"),
-  { assignToType: "OrderCount" },
-);
-
-// Generates:
+const OrderCount = t.dict(t.num).keyName("customer");
+t.toTypescript({ OrderCount });
+```
+```typescript
 type OrderCount = {[customer: string]: number};
 ```
 
 ### Readability for nested types
 
 Generally, using `toTypescript({ ... })` just does the right thing in terms of
-generating deeply-nested type data. However, if you only want to generate a
-*single* one of the types, you'll quickly realize that the generated TypeScript
-is less than ideal in terms of readability: while it's technically
-syntactically correct, it duplicates the structural type definitions in each
-type; for example:
+generating deeply-nested type data for multiple Structural types that reference
+each other. However, if you only want to generate a *single* one of the types,
+you'll quickly realize that the generated TypeScript is less than ideal in
+terms of readability: while it's technically syntactically correct, it
+duplicates the structural type definitions for the referenced types; for
+example:
 
 ```typescript
 const Customer = t.subtype({
