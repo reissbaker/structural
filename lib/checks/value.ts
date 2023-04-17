@@ -1,7 +1,7 @@
 import { Err, Result } from "../result";
 import { Type } from "../type";
 
-export class Value<T> extends Type<T> {
+export class Value<const T> extends Type<T> {
   readonly val: T;
   constructor(v: T) {
     super();
