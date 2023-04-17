@@ -407,6 +407,33 @@ type User = {
 };
 ```
 
+If you pass multiple types into the hash, the string will contain all of the
+types; for example:
+
+```typescript
+const Customer = t.subtype({
+  orders: t.num,
+});
+const Business = t.subtype({
+  customers: t.array(Customer),
+});
+
+
+toTypescript({ Customer, Business });
+```
+
+Generates:
+
+```typescript
+type Customer = {
+  orders: number,
+};
+
+type Business = {
+  customers: Array<Customer>,
+};
+```
+
 ### Comments
 
 Structural provides some convenience methods for generating good TypeScript
@@ -480,8 +507,10 @@ type OrderCount = {[customer: string]: number};
 
 ### Readability for nested types
 
-If you have a few nested types, you'll quickly realize that the generated
-TypeScript is less than ideal in terms of readability: while it's technically
+Generally, using `toTypescript({ ... })` just does the right thing in terms of
+generating deeply-nested type data. However, if you only want to generate a
+*single* one of the types, you'll quickly realize that the generated TypeScript
+is less than ideal in terms of readability: while it's technically
 syntactically correct, it duplicates the structural type definitions in each
 type; for example:
 
@@ -493,29 +522,41 @@ const Business = t.subtype({
   customers: t.array(Customer),
 });
 
-const customerTs = t.toTypescript(Customer, { assignToType: "Customer" });
-const businessTs = t.toTypescript(Business, { assignToType: "Business" });
+const businessTs = t.toTypescript(Business);
 ```
 
 This would generate the following two type definitions:
 
 ```typescript
-type Customer = {
-  orders: number,
-};
-type Business = {
+{
   customers: Array<{
     orders: number,
   }>,
-};
+}
 ```
 
-While that's technically *correct*, it's pretty ugly from a readability
-perspective. We'd much rather generate something like:
+While that's technically *correct*, you might want to just reference the
+`Customer` class if you've defined it elsewhere. For example, it might be nice
+to generate the following:
+
+```typescript
+{
+  customers: Array<Customer>,
+}
+```
+
+With `toTypescript`, that's pretty easy to do if you want to generate both
+Customer and Business. Instead of passing in a single type and assigning it to
+a type name, you can instead just pass in all the types in a hash, and it'll
+de-duplicate everything for you and assign them type names:
+
+```typescript
+toTypescript({ Customer, Business });
+```
 
 ```typescript
 type Customer = {
-  orders: number,
+  id: number,
 };
 
 type Business = {
@@ -523,40 +564,8 @@ type Business = {
 };
 ```
 
-With `toTypescript`, that's pretty easy to do. Instead of passing in a single
-type and assigning it to a type name, you can instead just pass in all the
-types in a hash, and it'll de-duplicate everything for you and assign them type
-names:
-
-```typescript
-toTypescript({ Customer, Business });
-```
-
-And it'll generate exactly what we wanted. It generates the types in the order
-that they're specified in the hash, so make sure the ones you want to appear
-first in the output are first in the hash, and so on and so forth.
-
-This is a wrapper over some options you can pass into `toTypescript`. You
-probably won't ever need to use these, but if you want more granular control:
-
-
-#### `assignToType`
-
-The `assignToType` option auto-generates the syntax to assign a type a name,
-and inserting a semicolon after the type definition. For example:
-
-```typescript
-const ts = t.toTypescript(t.either(t.num, t.str), {
-  assignToType: "id",
-});
-```
-
-This would result in `ts` having the following value:
-
-```typescript
-type id = number
-  | string;
-```
+But if you only want Business, what to do? Well, you can use the extra options
+to `toTypescript` that the hash version is a wrapper over.
 
 #### `useReference`
 
@@ -575,7 +584,6 @@ const Business = t.subtype({
 });
 
 const businessTs = t.toTypescript(Business, {
-  assignToType: "Business"
   useReference: {
     Customer,
   },
@@ -588,7 +596,25 @@ with the key name. In this case, we're replacing `Customer` with `"Customer"`
 `businessTs` string would be:
 
 ```typescript
-type Business = {
+{
   customers: Array<Customer>,
-};
+}
+```
+
+#### `assignToType`
+
+The `assignToType` option auto-generates the syntax to assign a type a name,
+and inserting a semicolon after the type definition. For example:
+
+```typescript
+const ts = t.toTypescript(t.either(t.num, t.str), {
+  assignToType: "id",
+});
+```
+
+This would result in `ts` having the following value:
+
+```typescript
+type id = number
+  | string;
 ```
