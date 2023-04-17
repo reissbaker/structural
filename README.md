@@ -413,7 +413,7 @@ Running `t.toTypescript` on that struct would generate:
 Multiline comments are also supported and have generally-sensible output
 formatting:
 
-```
+```typescript
 t.subtype({
   bar: t.str.comment(`
     A multi-line comment.
@@ -498,6 +498,7 @@ perspective. We'd much rather generate something like:
 type Customer = {
   orders: number,
 };
+
 type Business = {
   customers: Array<Customer>,
 };
@@ -505,9 +506,10 @@ type Business = {
 
 With `toTypescript`, that's pretty easy to do. Instead of passing in a single
 type and assigning it to a type name, you can instead just pass in all the
-types in a hash, and it'll de-duplicate everything for you:
+types in a hash, and it'll de-duplicate everything for you and assign them type
+names:
 
-```
+```typescript
 toTypescript({ Customer, Business });
 ```
 
