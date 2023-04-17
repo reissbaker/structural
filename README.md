@@ -459,12 +459,67 @@ t.toTypescript(
 type OrderCount = {[customer: string]: number};
 ```
 
-### Readability for deeply-nested types
+### Readability for nested types
 
-The `toTypescript` function has a couple of useful options for generating
-TypeScript, which are as follows:
+If you have a few nested types, you'll quickly realize that the generated
+TypeScript is less than ideal in terms of readability: while it's technically
+syntactically correct, it duplicates the structural type definitions in each
+type; for example:
 
-### `assignToType`
+```typescript
+const Customer = t.subtype({
+  orders: t.num,
+});
+const Business = t.subtype({
+  customers: t.array(Customer),
+});
+
+const customerTs = t.toTypescript(Customer, { assignToType: "Customer" });
+const businessTs = t.toTypescript(Business, { assignToType: "Business" });
+```
+
+This would generate the following two type definitions:
+
+```typescript
+type Customer = {
+  orders: number,
+};
+type Business = {
+  customers: Array<{
+    orders: number,
+  }>,
+};
+```
+
+While that's technically *correct*, it's pretty ugly from a readability
+perspective. We'd much rather generate something like:
+
+```typescript
+type Customer = {
+  orders: number,
+};
+type Business = {
+  customers: Array<Customer>,
+};
+```
+
+With `toTypescript`, that's pretty easy to do. Instead of passing in a single
+type and assigning it to a type name, you can instead just pass in all the
+types in a hash, and it'll de-duplicate everything for you:
+
+```
+toTypescript({ Customer, Business });
+```
+
+And it'll generate exactly what we wanted. It generates the types in the order
+that they're specified in the hash, so make sure the ones you want to appear
+first in the output are first in the hash, and so on and so forth.
+
+This is a wrapper over some options you can pass into `toTypescript`. You
+probably won't ever need to use these, but if you want more granular control:
+
+
+#### `assignToType`
 
 The `assignToType` option auto-generates the syntax to assign a type a name,
 and inserting a semicolon after the type definition. For example:
@@ -482,7 +537,7 @@ type id = number
   | string;
 ```
 
-### `useReference`
+#### `useReference`
 
 The `useReference` option helps readability of deeply-nested types. Let's first
 look at an example without `useReference`:

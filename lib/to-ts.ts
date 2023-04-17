@@ -25,15 +25,38 @@ export type TypescriptUserOpts = Partial<ToTypescriptOpts> & {
   assignToType?: string,
 };
 
-export function toTypescript(type: Kind, userOpts: TypescriptUserOpts = {}): string {
-  const opts = Object.assign({ indent: "  ", indentLevel: 0 }, userOpts);
-  // assignToType is only valid at the top level, so delete it if it exists
-  delete opts.assignToType;
+type SingleConversionWithOpts = [ type: Kind, userOpts: TypescriptUserOpts ];
+type SingleConversion = [ type: Kind ];
+type MultipleConversion = [ types: { [name: string]: Kind } ];
 
-  const ts = toTS(type, opts);
+export function toTypescript(...args: SingleConversion | SingleConversionWithOpts | MultipleConversion): string {
+  if(args.length === 2) {
+    const [ type, userOpts ] = args;
+    const opts = Object.assign({ indent: "  ", indentLevel: 0 }, userOpts);
+    // assignToType is only valid at the top level, so delete it if it exists
+    delete opts.assignToType;
 
-  if(userOpts.assignToType) return `type ${userOpts.assignToType} = ${ts};`;
-  return ts;
+    const ts = toTS(type, opts);
+
+    if(userOpts.assignToType) return `type ${userOpts.assignToType} = ${ts};`;
+    return ts;
+  }
+
+  const arg = args[0]
+  if(arg instanceof Type) return toTypescript(arg, {});
+
+  const keys = Object.keys(arg);
+  if(keys.length === 0) return "";
+  const output: string[] = [];
+  for(const key of keys) {
+    const refs = Object.assign({}, arg);
+    delete refs[key];
+    output.push(toTypescript(arg[key], {
+      useReference: refs,
+      assignToType: key,
+    }));
+  }
+  return output.join("\n\n");
 }
 
 function toTS(type: Kind, opts: ToTypescriptOpts): string {
