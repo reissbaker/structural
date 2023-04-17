@@ -546,4 +546,3 @@ const businessTs = t.toTypescript(Business, {
 Any value in the `useReference` hash will be replaced in the TypeScript output
 with the key name. In this case, we're replacing `Customer` with `"Customer"`
 (and using object shorthand syntax to make that relatively ergonomic).
-
