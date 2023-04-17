@@ -4,6 +4,10 @@ test("converts to typescript", () => {
   expect(t.toTypescript(t.dict(t.str))).toEqual("{[key: string]: string}");
 });
 
+test("converts to typescript with custom key name", () => {
+  expect(t.toTypescript(t.dict(t.str).keyName("name"))).toEqual("{[name: string]: string}")
+});
+
 test("converts to multiline typescript if necessary", () => {
   expect(t.toTypescript(t.dict(t.exact({
     key: t.bool,
