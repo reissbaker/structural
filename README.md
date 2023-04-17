@@ -388,6 +388,52 @@ The `ts` string would be:
 }
 ```
 
+You can also generate TypeScript type definitions with type names by passing the
+Structral types in as a hash; for example:
+
+```typescript
+const User = t.subtype({
+  id: t.num,
+});
+
+t.toTypescript({ User });
+```
+
+Which generates:
+
+```typescript
+type User = {
+  id: number,
+};
+```
+
+If you pass multiple types into the hash, the string will contain all of the
+types; for example:
+
+```typescript
+const Customer = t.subtype({
+  orders: t.num,
+});
+const Business = t.subtype({
+  customers: t.array(Customer),
+});
+
+
+toTypescript({ Customer, Business });
+```
+
+Generates:
+
+```typescript
+type Customer = {
+  orders: number,
+};
+
+type Business = {
+  customers: Array<Customer>,
+};
+```
+
 ### Comments
 
 Structural provides some convenience methods for generating good TypeScript
@@ -461,8 +507,10 @@ type OrderCount = {[customer: string]: number};
 
 ### Readability for nested types
 
-If you have a few nested types, you'll quickly realize that the generated
-TypeScript is less than ideal in terms of readability: while it's technically
+Generally, using `toTypescript({ ... })` just does the right thing in terms of
+generating deeply-nested type data. However, if you only want to generate a
+*single* one of the types, you'll quickly realize that the generated TypeScript
+is less than ideal in terms of readability: while it's technically
 syntactically correct, it duplicates the structural type definitions in each
 type; for example:
 
@@ -474,29 +522,41 @@ const Business = t.subtype({
   customers: t.array(Customer),
 });
 
-const customerTs = t.toTypescript(Customer, { assignToType: "Customer" });
-const businessTs = t.toTypescript(Business, { assignToType: "Business" });
+const businessTs = t.toTypescript(Business);
 ```
 
 This would generate the following two type definitions:
 
 ```typescript
-type Customer = {
-  orders: number,
-};
-type Business = {
+{
   customers: Array<{
     orders: number,
   }>,
-};
+}
 ```
 
-While that's technically *correct*, it's pretty ugly from a readability
-perspective. We'd much rather generate something like:
+While that's technically *correct*, you might want to just reference the
+`Customer` class if you've defined it elsewhere. For example, it might be nice
+to generate the following:
+
+```typescript
+{
+  customers: Array<Customer>,
+}
+```
+
+With `toTypescript`, that's pretty easy to do if you want to generate both
+Customer and Business. Instead of passing in a single type and assigning it to
+a type name, you can instead just pass in all the types in a hash, and it'll
+de-duplicate everything for you and assign them type names:
+
+```typescript
+toTypescript({ Customer, Business });
+```
 
 ```typescript
 type Customer = {
-  orders: number,
+  id: number,
 };
 
 type Business = {
@@ -504,22 +564,42 @@ type Business = {
 };
 ```
 
-With `toTypescript`, that's pretty easy to do. Instead of passing in a single
-type and assigning it to a type name, you can instead just pass in all the
-types in a hash, and it'll de-duplicate everything for you and assign them type
-names:
+But if you only want Business, what to do? Well, you can use the extra options
+to `toTypescript` that the hash version is a wrapper over.
+
+#### `useReference`
+
+The `useReference` option helps readability of deeply-nested types. Using the
+example of `Customer` and `Business` Structral types from above, we can use
+`useReference` to ensure that when we generate the `Business` type, it replaces
+references to `Customer` with the id `Customer`, rather than re-generating the
+entire structural type for `Customer` inline. For example:
 
 ```typescript
-toTypescript({ Customer, Business });
+const Customer = t.subtype({
+  orders: t.num,
+});
+const Business = t.subtype({
+  customers: t.array(Customer),
+});
+
+const businessTs = t.toTypescript(Business, {
+  useReference: {
+    Customer,
+  },
+});
 ```
 
-And it'll generate exactly what we wanted. It generates the types in the order
-that they're specified in the hash, so make sure the ones you want to appear
-first in the output are first in the hash, and so on and so forth.
+Any value in the `useReference` hash will be replaced in the TypeScript output
+with the key name. In this case, we're replacing `Customer` with `"Customer"`
+(and using object shorthand syntax to make that relatively ergonomic). The
+`businessTs` string would be:
 
-This is a wrapper over some options you can pass into `toTypescript`. You
-probably won't ever need to use these, but if you want more granular control:
-
+```typescript
+{
+  customers: Array<Customer>,
+}
+```
 
 #### `assignToType`
 
@@ -538,68 +618,3 @@ This would result in `ts` having the following value:
 type id = number
   | string;
 ```
-
-#### `useReference`
-
-The `useReference` option helps readability of deeply-nested types. Let's first
-look at an example without `useReference`:
-
-```typescript
-const Customer = t.subtype({
-  orders: t.num,
-});
-const Business = t.subtype({
-  customers: t.array(Customer),
-});
-
-const customerTs = t.toTypescript(Customer, { assignToType: "Customer" });
-const businessTs = t.toTypescript(Business, { assignToType: "Business" });
-```
-
-This would generate the following two type definitions:
-
-```typescript
-type Customer = {
-  orders: number,
-};
-type Business = {
-  customers: Array<{
-    orders: number,
-  }>,
-};
-```
-
-While that's technically *correct*, it's pretty ugly from a readability
-perspective. We'd much rather generate something like:
-
-```typescript
-type Customer = {
-  orders: number,
-};
-type Business = {
-  customers: Array<Customer>,
-};
-```
-
-With `useReference`, we can generate exactly that:
-
-```typescript
-const Customer = t.subtype({
-  orders: t.num,
-});
-const Business = t.subtype({
-  customers: t.array(Customer),
-});
-
-const customerTs = t.toTypescript(Customer, { assignToType: "Customer" });
-const businessTs = t.toTypescript(Business, {
-  assignToType: "Business"
-  useReference: {
-    Customer,
-  },
-});
-```
-
-Any value in the `useReference` hash will be replaced in the TypeScript output
-with the key name. In this case, we're replacing `Customer` with `"Customer"`
-(and using object shorthand syntax to make that relatively ergonomic).
