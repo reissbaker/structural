@@ -1,7 +1,7 @@
 {
   "name": "structural",
   "author": "Matt Baker <@reissbaker>",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "Runtime structural typechecker",
   "repository": {
     "type": "git",
