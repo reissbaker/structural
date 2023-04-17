@@ -25,6 +25,7 @@ integrating with tools that understand TS type syntax.
 * [Advanced type system features](#advanced-type-system-features)
 * [Custom validations](#custom-validations)
 * [Slicing keys](#slicing-keys)
+* [Generating TypeScript](#generating-typescript)
 
 ## Why?
 
@@ -115,108 +116,8 @@ function update(user: UserType) {
 }
 ```
 
-You can automatically convert Structural types to TypeScript types with the
-`toTypescript` function. For example:
-
-```typescript
-const ts = t.toTypescript(t.subtype({
-  id: t.num,
-}));
-```
-
-The `ts` string would be:
-
-```typescript
-{
-  id: number,
-}
-```
-
-The `toTypescript` function has a couple of useful options for generating
-TypeScript, which are as follows:
-
-### `assignToType`
-
-The `assignToType` option auto-generates the syntax to assign a type a name,
-and inserting a semicolon after the type definition. For example:
-
-```typescript
-const ts = t.toTypescript(t.either(t.num, t.str), {
-  assignToType: "id",
-});
-```
-
-This would result in `ts` having the following value:
-
-```typescript
-type id = number
-  | string;
-```
-
-### `useReference`
-
-The `useReference` option helps readability of deeply-nested types. Let's first
-look at an example without `useReference`:
-
-```typescript
-const Customer = t.subtype({
-  orders: t.num,
-});
-const Business = t.subtype({
-  customers: t.array(Customer),
-});
-
-const customerTs = t.toTypescript(Customer, { assignToType: "Customer" });
-const businessTs = t.toTypescript(Business, { assignToType: "Business" });
-```
-
-This would generate the following two type definitions:
-
-```typescript
-type Customer = {
-  orders: number,
-};
-type Business = {
-  customers: Array<{
-    orders: number,
-  }>,
-};
-```
-
-While that's technically *correct*, it's pretty ugly from a readability
-perspective. We'd much rather generate something like:
-
-```typescript
-type Customer = {
-  orders: number,
-};
-type Business = {
-  customers: Array<Customer>,
-};
-```
-
-With `useReference`, we can generate exactly that:
-
-```typescript
-const Customer = t.subtype({
-  orders: t.num,
-});
-const Business = t.subtype({
-  customers: t.array(Customer),
-});
-
-const customerTs = t.toTypescript(Customer, { assignToType: "Customer" });
-const businessTs = t.toTypescript(Business, {
-  assignToType: "Business"
-  useReference: {
-    Customer,
-  },
-});
-```
-
-Any value in the `useReference` hash will be replaced in the TypeScript output
-with the key name. In this case, we're replacing `Customer` with `"Customer"`
-(and using object shorthand syntax to make that relatively ergonomic).
+You can even generate TypeScript types as source code from Structural types,
+[as explained later in the docs](#generating-typescript).
 
 ## Comparisons with other frameworks
 
@@ -467,3 +368,182 @@ The contents of `sliced` are:
 because `alive` wasn't defined in the Intern type.
 */
 ```
+
+## Generating TypeScript
+
+You can automatically convert Structural types to TypeScript types with the
+`toTypescript` function. For example:
+
+```typescript
+const ts = t.toTypescript(t.subtype({
+  id: t.num,
+}));
+```
+
+The `ts` string would be:
+
+```typescript
+{
+  id: number,
+}
+```
+
+### Comments
+
+Structural provides some convenience methods for generating good TypeScript
+code, allowing you to add comments to the code you generate. The comment
+methods are no-ops at runtime, but help readability for your generated
+TypeScript. Here's an example of a comment:
+
+```typescript
+t.subtype({
+  name: t.str.comment("The user's full name"),
+});
+```
+
+Running `t.toTypescript` on that struct would generate:
+
+```typescript
+{
+  // The user's full name
+  name: string,
+}
+```
+
+Multiline comments are also supported and have generally-sensible output
+formatting:
+
+```
+t.subtype({
+  bar: t.str.comment(`
+    A multi-line comment.
+    It documents the bar field.
+  `),
+});
+```
+
+Which would be generated as:
+
+```typescript
+{
+  /*
+   * A multi-line comment.
+   * It documents the bar field.
+   */
+  bar: string,
+}
+```
+
+### Renaming keys in dictionaries
+
+By default, the `dict` type will name its keys `key`, like so:
+
+```typescript
+t.toTypescript(t.dict(t.num), { assignToType: "NumericDict" });
+
+// Generates:
+type NumericDict = {[key: string]: number};
+```
+
+Depending on your dictionary, you may want to use a more meaningful name than
+just `key`. For example, if you're mapping customer names to order counts, it
+might be useful to have the key be named `customer` for readability:
+
+```typescript
+t.toTypescript(
+  t.dict(t.num).keyName("customer"),
+  { assignToType: "OrderCount" },
+);
+
+// Generates:
+type OrderCount = {[customer: string]: number};
+```
+
+### Readability for deeply-nested types
+
+The `toTypescript` function has a couple of useful options for generating
+TypeScript, which are as follows:
+
+### `assignToType`
+
+The `assignToType` option auto-generates the syntax to assign a type a name,
+and inserting a semicolon after the type definition. For example:
+
+```typescript
+const ts = t.toTypescript(t.either(t.num, t.str), {
+  assignToType: "id",
+});
+```
+
+This would result in `ts` having the following value:
+
+```typescript
+type id = number
+  | string;
+```
+
+### `useReference`
+
+The `useReference` option helps readability of deeply-nested types. Let's first
+look at an example without `useReference`:
+
+```typescript
+const Customer = t.subtype({
+  orders: t.num,
+});
+const Business = t.subtype({
+  customers: t.array(Customer),
+});
+
+const customerTs = t.toTypescript(Customer, { assignToType: "Customer" });
+const businessTs = t.toTypescript(Business, { assignToType: "Business" });
+```
+
+This would generate the following two type definitions:
+
+```typescript
+type Customer = {
+  orders: number,
+};
+type Business = {
+  customers: Array<{
+    orders: number,
+  }>,
+};
+```
+
+While that's technically *correct*, it's pretty ugly from a readability
+perspective. We'd much rather generate something like:
+
+```typescript
+type Customer = {
+  orders: number,
+};
+type Business = {
+  customers: Array<Customer>,
+};
+```
+
+With `useReference`, we can generate exactly that:
+
+```typescript
+const Customer = t.subtype({
+  orders: t.num,
+});
+const Business = t.subtype({
+  customers: t.array(Customer),
+});
+
+const customerTs = t.toTypescript(Customer, { assignToType: "Customer" });
+const businessTs = t.toTypescript(Business, {
+  assignToType: "Business"
+  useReference: {
+    Customer,
+  },
+});
+```
+
+Any value in the `useReference` hash will be replaced in the TypeScript output
+with the key name. In this case, we're replacing `Customer` with `"Customer"`
+(and using object shorthand syntax to make that relatively ergonomic).
+
