@@ -68,7 +68,24 @@ export class DeepPartial<T extends TypeStruct> extends KeyTrackingType<Unwrapped
   }
 }
 
+export const Nested = [
+  Struct,
+  PartialStruct,
+  Dict,
+  SetType,
+  MapType,
+  Arr,
+  Either,
+  Intersect,
+] as const;
+export type NestedType = InstanceType<(typeof Nested)[number]>;
+
 function deepPartialKind(kind: Type<any>): Type<any> {
+  if(isNested(kind)) return handleNested(kind);
+  return kind;
+}
+
+function handleNested(kind: NestedType): Type<any> {
   if(kind instanceof Struct) {
     if(hasNested(kind)) {
       return new DeepPartial(kind);
@@ -81,16 +98,19 @@ function deepPartialKind(kind: Type<any>): Type<any> {
   if(kind instanceof MapType) return new MapType(deepPartialKind(kind.keyType), deepPartialKind(kind.valueType));
   if(kind instanceof Arr) return new Arr(deepPartialKind(kind.elementType));
   if(kind instanceof Either) return new Either(deepPartialKind(kind.l), deepPartialKind(kind.r));
-  if(kind instanceof Intersect) {
-    return new Intersect(deepPartialKind(kind.left), deepPartialKind(kind.r));
-  }
+  return new Intersect(deepPartialKind(kind.left), deepPartialKind(kind.r));
+}
 
-  return kind;
+function isNested(kind: Type<any> | NestedType): kind is NestedType {
+  for(const t of Nested) {
+    if(kind instanceof t) return true;
+  }
+  return false;
 }
 
 function hasNested(struct: Struct<any>) {
   for(const k in struct.definition) {
-    if(struct.definition[k] instanceof Struct) return true;
+    if(isNested(struct.definition[k])) return true;
   }
   return false;
 }
