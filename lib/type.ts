@@ -252,18 +252,18 @@ export class Either<L, R> extends KeyTrackingType<L|R> {
  */
 
 export class Intersect<L, R> extends KeyTrackingType<L&R> {
-  readonly left: Type<L>;
+  readonly l: Type<L>;
   readonly r: Type<R>;
 
   constructor(l: Type<L>, r: Type<R>) {
     super();
 
-    this.left = l;
+    this.l = l;
     this.r = r;
   }
 
   checkTrackKeys(val: any): KeyTrackResult<L&R> {
-    const l = checkTrackKeys(this.left, val);
+    const l = checkTrackKeys(this.l, val);
     const r = checkTrackKeys(this.r, val);
 
     if((l instanceof Err) && (r instanceof Err)) {

@@ -134,12 +134,12 @@ function fromEither(e: Either<any, any>, opts: ToTypescriptOpts) {
 // TODO: Should intersect strip immediate-child comments?
 function fromIntersect(i: Intersect<any, any>, opts: ToTypescriptOpts) {
   // Handle validations chained with actual TS types, converting them to comments
-  if(i.left instanceof Validation) return toTS(new Comment(i.left.desc, i.r), opts);
-  if(i.r instanceof Validation) return toTS(new Comment(i.r.desc, i.left), opts);
+  if(i.l instanceof Validation) return toTS(new Comment(i.l.desc, i.r), opts);
+  if(i.r instanceof Validation) return toTS(new Comment(i.r.desc, i.l), opts);
 
   const indentation = indent(opts);
   return [
-    toTS(i.left, opts),
+    toTS(i.l, opts),
     `${indentation}${opts.indent}& ${toTS(i.r, {...opts, indentLevel: opts.indentLevel + 1})}`,
   ].join("\n");
 }
@@ -237,15 +237,38 @@ function stripOuterComments(t: Kind | OptionalKey<any>): StrippedComments {
     }
   }
 
-  if(t instanceof Intersect) {
-    if(t.left instanceof Validation) return stripOuterComments(new Comment(t.left.desc, t.r));
-    if(t.r instanceof Validation) return stripOuterComments(new Comment(t.r.desc, t.left));
+  const algebra = [ Intersect, Either ] as const;
+
+  for(const al of algebra) {
+    if(t instanceof al) {
+      if(t.l instanceof Validation) {
+        return stripOuterComments(new Comment(t.l.desc, t.r));
+      }
+      if(t.r instanceof Validation) {
+        return stripOuterComments(new Comment(t.r.desc, t.l));
+      }
+      if(t.l instanceof Comment) {
+        return stripOuterComments(handleStripAlgebra(t.l.commentStr, t.l.wrapped, t.r, al));
+      }
+      if(t.r instanceof Comment) {
+        return stripOuterComments(handleStripAlgebra(t.r.commentStr, t.l, t.r.wrapped, al));
+      }
+    }
   }
 
   return {
     comments: [],
     inner: t,
   };
+}
+
+function handleStripAlgebra(
+  desc: string,
+  r: Type<any>,
+  l: Type<any>,
+  constr: { new(r: Type<any>, l: Type<any>): Type<any> }
+): Type<any> {
+  return new Comment(desc, new constr(r, l));
 }
 
 function fromDict(d: Dict<any>, opts: ToTypescriptOpts) {

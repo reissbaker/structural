@@ -1,4 +1,4 @@
-import { Type, KeyTrackingType, KeyTrackResult, Intersect, Either } from "../type";
+import { Type, KeyTrackingType, KeyTrackResult, Intersect, Either, Comment } from "../type";
 import { Struct, optional, OptionalKey, TypeStruct, UnwrappedTypeStruct } from "./struct";
 import { undef } from "./primitives";
 import { Dict } from "./dict";
@@ -77,6 +77,7 @@ export const Nested = [
   Arr,
   Either,
   Intersect,
+  Comment,
 ] as const;
 export type NestedType = InstanceType<(typeof Nested)[number]>;
 
@@ -93,12 +94,13 @@ function handleNested(kind: NestedType): Type<any> {
     return new PartialStruct(kind);
   }
   if(kind instanceof PartialStruct) return new DeepPartial(kind.struct);
+  if(kind instanceof Comment) return new Comment(kind.commentStr, deepPartialKind(kind.wrapped));
   if(kind instanceof Dict) return new Dict(deepPartialKind(kind.valueType), kind.namedKey);
   if(kind instanceof SetType) return new SetType(deepPartialKind(kind.valueType));
   if(kind instanceof MapType) return new MapType(deepPartialKind(kind.keyType), deepPartialKind(kind.valueType));
   if(kind instanceof Arr) return new Arr(deepPartialKind(kind.elementType));
   if(kind instanceof Either) return new Either(deepPartialKind(kind.l), deepPartialKind(kind.r));
-  return new Intersect(deepPartialKind(kind.left), deepPartialKind(kind.r));
+  return new Intersect(deepPartialKind(kind.l), deepPartialKind(kind.r));
 }
 
 function isNested(kind: Type<any> | NestedType): kind is NestedType {
