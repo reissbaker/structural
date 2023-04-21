@@ -14,6 +14,6 @@ export class Value<const T> extends Type<T> {
   }
 }
 
-export function value<T>(v: T): Value<T> {
+export function value<const T>(v: T): Value<T> {
   return new Value(v);
 }

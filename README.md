@@ -77,6 +77,8 @@ following advanced features:
   an object with both a `name` and an `eyeColor` is a valid `Person`.
 * __Algebraic data types:__ use `.and` and `.or` on types to compose them via
   type intersections or unions.
+* __Partial types:__ use `t.partial(...)` for an equivalent to `Partial<T>`,
+  and `t.deepPartial(...)` to make all nested types `Partial` as well.
 
 
 ## TypeScript integration

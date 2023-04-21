@@ -53,6 +53,12 @@ test("allows type narrowing for exhaustiveness checking", () => {
     if(u instanceof t.Comment) {
       return "comment";
     }
+    if(u instanceof t.PartialStruct) {
+      return "partial";
+    }
+    if(u instanceof t.DeepPartial) {
+      return "deeppartial";
+    }
 
     // This should compile even though we never ran `if(u instanceof Validation)`, because we've
     // narrowed the type to just Validation by checking for everything else that `Kind` could be.
