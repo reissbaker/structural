@@ -1,4 +1,57 @@
 import * as t from "..";
+describe("toTypescript", () => {
+  describe("partial", () => {
+    test("Uses Partial<> type signifier", () => {
+      const str = t.toTypescript(t.partial(t.subtype({
+        hi: t.str,
+      })));
+      expect(str).toEqual("Partial<{\n  hi: string,\n}>");
+    });
+    test("Correctly refs out inner structs", () => {
+      const a = t.subtype({
+        hi: t.str,
+      });
+      const b = t.partial(a);
+      const str = t.toTypescript({ a, b });
+      expect(str).toEqual(
+        "type a = {\n  hi: string,\n};\n\ntype b = Partial<a>;"
+      );
+    });
+  });
+
+  describe("deepPartial", () => {
+    test("Uses Partial<> type signifier", () => {
+      const str = t.toTypescript(t.partial(t.subtype({
+        hi: t.str,
+      })));
+      expect(str).toEqual("Partial<{\n  hi: string,\n}>");
+    });
+    test("Correctly refs out inner structs if they aren't further nested", () => {
+      const a = t.subtype({
+        hi: t.str,
+      });
+      const b = t.deepPartial(a);
+      const str = t.toTypescript({ a, b });
+      expect(str).toEqual(
+        "type a = {\n  hi: string,\n};\n\ntype b = Partial<a>;"
+      );
+    });
+    test("Doesn't ref out inner structs if they are further nested", () => {
+      const a = t.subtype({
+        hi: t.str,
+      });
+      const b = t.subtype({
+        a,
+      });
+      const c = t.deepPartial(b);
+      const str = t.toTypescript({ a, b, c });
+      expect(str).toEqual(
+        "type a = {\n  hi: string,\n};\n\ntype b = {\n  a: a,\n};\n\ntype c = Partial<{\n  a?: Partial<a>\n    | undefined,\n}>;"
+      );
+    });
+  });
+});
+
 describe("partial", () => {
   test("accepts exact matches", () => {
     const check = t.partial(t.subtype({

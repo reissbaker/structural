@@ -39,30 +39,45 @@ export class PartialStruct<T extends TypeStruct> extends KeyTrackingType<Unwrapp
 
 export class DeepPartial<T extends TypeStruct> extends KeyTrackingType<UnwrappedTypeStruct<DeepPartialTypeStruct<T>>> {
   readonly struct: Struct<DeepPartialTypeStruct<T>>;
-  constructor(struct: Struct<T>) {
+  readonly hasNested: boolean;
+  constructor(readonly ogstruct: Struct<T>) {
     super();
+    this.hasNested = hasNested(ogstruct);
     const partialDef: Partial<DeepPartialTypeStruct<T>> = {};
-    for(const k in struct.definition) {
-      const v = struct.definition[k];
+    for(const k in ogstruct.definition) {
+      const v = ogstruct.definition[k];
       if(v instanceof OptionalKey) {
         //@ts-ignore
         partialDef[k] = optional(v.type.or(undef));
       }
       else if(v instanceof Struct) {
-        //@ts-ignore
-        partialDef[k] = optional(new DeepPartial(v.definition, v.exact).or(undef));
+        if(hasNested(v)) {
+          //@ts-ignore
+          partialDef[k] = optional(new DeepPartial(v).or(undef));
+        }
+        else {
+          //@ts-ignore
+          partialDef[k] = optional(new PartialStruct(v).or(undef));
+        }
       }
       else {
         //@ts-ignore
         partialDef[k] = optional(v.or(undef));
       }
     }
-    this.struct = new Struct(partialDef as DeepPartialTypeStruct<T>, struct.exact);
+    this.struct = new Struct(partialDef as DeepPartialTypeStruct<T>, ogstruct.exact);
   }
 
   checkTrackKeys(val: any): KeyTrackResult<UnwrappedTypeStruct<DeepPartialTypeStruct<T>>> {
     return this.struct.checkTrackKeys(val);
   }
+}
+
+function hasNested(struct: Struct<any>) {
+  for(const k in struct.definition) {
+    if(struct.definition[k] instanceof Struct) return true;
+  }
+  return false;
 }
 
 export function partial<T extends TypeStruct>(struct: Struct<T>): PartialStruct<T> {

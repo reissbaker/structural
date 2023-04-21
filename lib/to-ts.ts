@@ -92,6 +92,7 @@ function fromPartial(p: PartialStruct<any>, opts: ToTypescriptOpts) {
 }
 
 function fromDeepPartial(p: DeepPartial<any>, opts: ToTypescriptOpts) {
+  if(!p.hasNested) return `Partial<${toTS(p.ogstruct, opts)}>`;
   return `Partial<${toTS(p.struct, opts)}>`;
 }
 
