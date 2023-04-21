@@ -1,7 +1,9 @@
-import { Type, KeyTrackingType, KeyTrackResult } from "../type";
+import { Type, KeyTrackingType, KeyTrackResult, Intersect, Either } from "../type";
 import { Struct, optional, OptionalKey, TypeStruct, UnwrappedTypeStruct } from "./struct";
 import { undef } from "./primitives";
 import { Dict } from "./dict";
+import { SetType } from "./set";
+import { Arr } from "./array";
 
 
 type MakeOptional<T extends Type<any> | OptionalKey<any>> = T extends Type<any> ? OptionalKey<T> : T;
@@ -51,27 +53,10 @@ export class DeepPartial<T extends TypeStruct> extends KeyTrackingType<Unwrapped
         //@ts-ignore
         partialDef[k] = optional(v.type.or(undef));
       }
-      else if(v instanceof Struct) {
-        if(hasNested(v)) {
-          //@ts-ignore
-          partialDef[k] = optional(new DeepPartial(v).or(undef));
-        }
-        else {
-          //@ts-ignore
-          partialDef[k] = optional(new PartialStruct(v).or(undef));
-        }
-      }
-      else if(v instanceof PartialStruct) {
-        // @ts-ignore
-        partialDef[k] = optional(new DeepPartial(v.struct).or(undef));
-      }
-      else if(v instanceof Dict) {
-        //@ts-ignore
-        partialDef[k] = optional(deepPartialDict(v, v.namedKey).or(undef));
-      }
       else {
-        //@ts-ignore
-        partialDef[k] = optional(v.or(undef));
+        const orUndef = deepPartialKind(v).or(undef);
+        // @ts-ignore
+        partialDef[k] = optional(orUndef);
       }
     }
     this.struct = new Struct(partialDef as DeepPartialTypeStruct<T>, ogstruct.exact);
@@ -82,18 +67,23 @@ export class DeepPartial<T extends TypeStruct> extends KeyTrackingType<Unwrapped
   }
 }
 
-function deepPartialDict(d: Dict<any>): Dict<any> {
-  const innerV = d.valueType;
-  if(innerV instanceof Struct) {
-    return new Dict(new DeepPartial(innerV), d.namedKey);
+function deepPartialKind(kind: Type<any>): Type<any> {
+  if(kind instanceof Struct) {
+    if(hasNested(kind)) {
+      return new DeepPartial(kind);
+    }
+    return new PartialStruct(kind);
   }
-  if(innerV instanceof PartialStruct) {
-    return new Dict(new DeepPartial(innerV.struct));
+  if(kind instanceof PartialStruct) return new DeepPartial(kind.struct);
+  if(kind instanceof Dict) return new Dict(deepPartialKind(kind.valueType), kind.namedKey);
+  if(kind instanceof SetType) return new SetType(deepPartialKind(kind.valueType));
+  if(kind instanceof Arr) return new Arr(deepPartialKind(kind.elementType));
+  if(kind instanceof Either) return new Either(deepPartialKind(kind.l), deepPartialKind(kind.r));
+  if(kind instanceof Intersect) {
+    return new Intersect(deepPartialKind(kind.left), deepPartialKind(kind.r));
   }
-  else if(innerV instanceof Dict) {
-    return new Dict(deepPartialDict(innerV), d.namedKey);
-  }
-  return d;
+
+  return kind;
 }
 
 function hasNested(struct: Struct<any>) {

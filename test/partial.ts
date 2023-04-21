@@ -204,6 +204,42 @@ describe("deepPartial", () => {
 
     check.assert({ hi: { ok: {} } })
   });
+  test("allows previously-required nested keys to be missing from sets", () => {
+    const check = t.deepPartial(t.subtype({
+      hi: t.set(t.subtype({
+        world: t.str,
+      })),
+    }));
+
+    check.assert({ hi: new Set([{}]) })
+  });
+  test("allows previously-required nested keys to be missing from arrays", () => {
+    const check = t.deepPartial(t.subtype({
+      hi: t.array(t.subtype({
+        world: t.str,
+      })),
+    }));
+
+    check.assert({ hi: [{}] })
+  });
+  test("allows previously-required nested keys to be missing from eithers", () => {
+    const check = t.deepPartial(t.subtype({
+      hi: t.subtype({
+        world: t.str,
+      }).or(t.str),
+    }));
+
+    check.assert({ hi: {} })
+  });
+  test("allows previously-required nested keys to be missing from intersects", () => {
+    const check = t.deepPartial(t.subtype({
+      hi: t.subtype({
+        world: t.str,
+      }).and(t.subtype({ foo: t.str })),
+    }));
+
+    check.assert({ hi: { foo: "" } })
+  });
   test("converts nested partials to deep partials", () => {
     const check = t.deepPartial(t.subtype({
       hi: t.partial(t.subtype({
