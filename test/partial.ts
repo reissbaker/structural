@@ -49,6 +49,19 @@ describe("toTypescript", () => {
         "type a = {\n  hi: string,\n};\n\ntype b = {\n  a: a,\n};\n\ntype c = Partial<{\n  a?: Partial<a>\n    | undefined,\n}>;"
       );
     });
+    test("Doesn't ref out inner structs if they are further nested in dicts", () => {
+      const a = t.subtype({
+        hi: t.str,
+      });
+      const b = t.subtype({
+        a: t.dict(a),
+      });
+      const c = t.deepPartial(b);
+      const str = t.toTypescript({ a, b, c });
+      expect(str).toEqual(
+        "type a = {\n  hi: string,\n};\n\ntype b = {\n  a: {[key: string]: a},\n};\n\ntype c = Partial<{\n  a?: {[key: string]: Partial<a>}\n    | undefined,\n}>;"
+      );
+    });
   });
 });
 
