@@ -16,7 +16,7 @@ export class OptionalKey<T extends Type<any>> {
 
 type OptionalOrType<T> = T extends OptionalKey<infer Inner> ? Inner : T;
 
-type TypeStruct = {
+export type TypeStruct = {
   [key: string]: Type<any> | OptionalKey<any>;
 };
 
@@ -103,13 +103,11 @@ export class Struct<T extends TypeStruct> extends KeyTrackingType<UnwrappedTypeS
   }
 }
 
-type HiddenStruct<T extends TypeStruct> = Type<UnwrappedTypeStruct<T>>;
-
-export function subtype<T extends TypeStruct>(def: T): HiddenStruct<T> {
+export function subtype<T extends TypeStruct>(def: T): Struct<T> {
   return new Struct(def, false);
 }
 
-export function exact<T extends TypeStruct>(def: T): HiddenStruct<T> {
+export function exact<T extends TypeStruct>(def: T): Struct<T> {
   return new Struct(def, true);
 }
 

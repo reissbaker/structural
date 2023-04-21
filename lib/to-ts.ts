@@ -10,6 +10,7 @@ import { SetType } from "./checks/set";
 import { Any } from "./checks/any";
 import { Is } from "./checks/is";
 import { Never } from "./checks/never";
+import { PartialStruct, DeepPartial } from "./checks/partial";
 import { Kind } from "./kind";
 
 type ToTypescriptOpts = {
@@ -81,7 +82,17 @@ function toTS(type: Kind, opts: ToTypescriptOpts): string {
   if(type instanceof SetType) return fromSet(type, opts);
   if(type instanceof Any) return fromAny();
   if(type instanceof Is) return fromIs(type);
+  if(type instanceof PartialStruct) return fromPartial(type, opts);
+  if(type instanceof DeepPartial) return fromDeepPartial(type, opts);
   return fromNever(type);
+}
+
+function fromPartial(p: PartialStruct<any>, opts: ToTypescriptOpts) {
+  return `Partial<${toTS(p.struct, opts)}>`;
+}
+
+function fromDeepPartial(p: DeepPartial<any>, opts: ToTypescriptOpts) {
+  return `Partial<${toTS(p.struct, opts)}>`;
 }
 
 function fromComment(c: Comment<any>, opts: ToTypescriptOpts) {

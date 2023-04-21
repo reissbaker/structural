@@ -15,6 +15,7 @@ export * from "./lib/checks/primitives";
 export * from "./lib/checks/any";
 export * from "./lib/checks/is";
 export * from "./lib/checks/never";
+export * from "./lib/checks/partial";
 
 export * from "./lib/kind";
 export * from "./lib/to-ts";
