@@ -240,6 +240,15 @@ describe("deepPartial", () => {
 
     check.assert({ hi: { foo: "" } })
   });
+  test("allows previously-required nested keys to be missing from maps", () => {
+    const check = t.deepPartial(t.subtype({
+      hi: t.map(t.subtype({
+        world: t.str,
+      }), t.subtype({ foo: t.str })),
+    }));
+
+    check.assert({ hi: new Map([ [{}, {}] ]) })
+  });
   test("converts nested partials to deep partials", () => {
     const check = t.deepPartial(t.subtype({
       hi: t.partial(t.subtype({
