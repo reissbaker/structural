@@ -94,7 +94,7 @@ test("kind example", () => {
        .when(t.instanceOf(t.InstanceOf), ignore)
        .when(t.instanceOf(t.TypeOf), ignore)
        .when(t.instanceOf(t.Either), v => { recur(v.l); recur(v.r) })
-       .when(t.instanceOf(t.Intersect), v => { recur(v.left); recur(v.r) })
+       .when(t.instanceOf(t.Intersect), v => { recur(v.l); recur(v.r) })
        .when(t.instanceOf(t.Validation), ignore)
        .when(t.instanceOf(t.Is), ignore)
     )
