@@ -1,6 +1,7 @@
 import { Type, KeyTrackingType, KeyTrackResult } from "../type";
 import { Struct, optional, OptionalKey, TypeStruct, UnwrappedTypeStruct } from "./struct";
 import { undef } from "./primitives";
+import { Dict } from "./dict";
 
 
 type MakeOptional<T extends Type<any> | OptionalKey<any>> = T extends Type<any> ? OptionalKey<T> : T;
@@ -60,6 +61,14 @@ export class DeepPartial<T extends TypeStruct> extends KeyTrackingType<Unwrapped
           partialDef[k] = optional(new PartialStruct(v).or(undef));
         }
       }
+      else if(v instanceof PartialStruct) {
+        // @ts-ignore
+        partialDef[k] = optional(new DeepPartial(v.struct).or(undef));
+      }
+      else if(v instanceof Dict) {
+        //@ts-ignore
+        partialDef[k] = optional(deepPartialDict(v, v.namedKey).or(undef));
+      }
       else {
         //@ts-ignore
         partialDef[k] = optional(v.or(undef));
@@ -71,6 +80,20 @@ export class DeepPartial<T extends TypeStruct> extends KeyTrackingType<Unwrapped
   checkTrackKeys(val: any): KeyTrackResult<UnwrappedTypeStruct<DeepPartialTypeStruct<T>>> {
     return this.struct.checkTrackKeys(val);
   }
+}
+
+function deepPartialDict(d: Dict<any>): Dict<any> {
+  const innerV = d.valueType;
+  if(innerV instanceof Struct) {
+    return new Dict(new DeepPartial(innerV), d.namedKey);
+  }
+  if(innerV instanceof PartialStruct) {
+    return new Dict(new DeepPartial(innerV.struct));
+  }
+  else if(innerV instanceof Dict) {
+    return new Dict(deepPartialDict(innerV), d.namedKey);
+  }
+  return d;
 }
 
 function hasNested(struct: Struct<any>) {

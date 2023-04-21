@@ -194,4 +194,25 @@ describe("deepPartial", () => {
 
     check.assert({ hi: {} })
   });
+
+  test("allows previously-required nested keys to be missing from dicts", () => {
+    const check = t.deepPartial(t.subtype({
+      hi: t.dict(t.subtype({
+        world: t.str,
+      })),
+    }));
+
+    check.assert({ hi: { ok: {} } })
+  });
+  test("converts nested partials to deep partials", () => {
+    const check = t.deepPartial(t.subtype({
+      hi: t.partial(t.subtype({
+        world: t.subtype({
+          foo: t.str,
+        }),
+      })),
+    }));
+
+    check.assert({ hi: { world: {} } })
+  });
 });
