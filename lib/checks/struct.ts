@@ -3,21 +3,30 @@ import { KeyTrackResult, Type, KeyTrackingType } from "../type";
 import { GetType } from "../get-type";
 
 /**
- * OptionalKey is a marker type that indicates that the key in a struct that
- * holds an OptionalKey is optional.
+ * MissingKey is a marker type that indicates that the key in a struct that holds an MissingKey is
+ * optional. However, if the key is present, the value must typecheck T; it can't be left undefined.
+ * This can be useful for verification but it's not equivalent to TypeScript's optional fields,
+ * which can be left undefined even when present.
  */
-export class OptionalKey<T extends Type<any>> {
-  type: T
-
-  constructor(type: T) {
-    this.type = type
-  }
+export class MissingKey<T extends Type<any>> {
+  constructor(readonly type: T) {}
 }
 
-type OptionalOrType<T> = T extends OptionalKey<infer Inner> ? Inner : T;
+/*
+ * OptionalKey mimics TypeScript's ?: optional field syntax in types/interfaces: it allows the key
+ * to be missing, or set to undefined.
+ */
+export class OptionalKey<T extends Type<any>> {
+  constructor(readonly type: T) {}
+}
+
+type WrapperOrType<T> = T extends MissingKey<infer Inner> ? Inner :
+  T extends OptionalKey<infer Inner> ? Inner : T;
+
+export type FieldDef = Type<any> | MissingKey<any> | OptionalKey<any>;
 
 export type TypeStruct = {
-  [key: string]: Type<any> | OptionalKey<any>;
+  [key: string]: FieldDef
 };
 
 // see this blog post for an explanation of this type shenanigans
@@ -25,26 +34,31 @@ export type TypeStruct = {
 
 // Returns a type like `"foo" | "bar"` for all the optional keys in a typestruct
 type OptionalPropertyNames<T extends TypeStruct> = {
-  [K in keyof T]: T[K] extends OptionalKey<any> ? K : never;
+  [K in keyof T]: T[K] extends MissingKey<any> ? K : T[K] extends OptionalKey<any> ? K : never;
 }[keyof T];
 
 // Unwraps Type<T> and OptionalKey<Type<T>> to T for all keys in a typestruct
 type UnwrapTypes<T extends TypeStruct> = {
-  [K in keyof T]: GetType<OptionalOrType<T[K]>>;
+  [K in keyof T]: GetType<WrapperOrType<T[K]>>;
 };
 
 export type UnwrappedTypeStruct<T extends TypeStruct> =
   /* required props */ Pick<UnwrapTypes<T>, Exclude<keyof T, OptionalPropertyNames<T>>> &
   /* optional props */ Partial<Pick<UnwrapTypes<T>, OptionalPropertyNames<T>>>;
 
-export function keyType<T>(box: OptionalKey<Type<T>> | Type<T>): Type<T> {
-  if (box instanceof OptionalKey) {
+export function keyType<T>(box: MissingKey<Type<T>> | OptionalKey<Type<T>> | Type<T>): Type<T> {
+  if(box instanceof MissingKey || box instanceof OptionalKey) {
     return box.type;
   }
+
   return box;
 }
 
-export function isOptional<T extends Type<any>>(box: OptionalKey<T> | T): box is OptionalKey<T> {
+export function allowsMissing<T extends Type<any>>(box: MissingKey<T> | T): box is MissingKey<T> {
+  return (box instanceof MissingKey);
+}
+
+export function allowsOptional<T extends Type<any>>(box: MissingKey<T> | T): box is OptionalKey<T> {
   return (box instanceof OptionalKey);
 }
 
@@ -86,16 +100,18 @@ export class Struct<T extends TypeStruct> extends KeyTrackingType<UnwrappedTypeS
     const errs: string[] = [];
     for(const prop in this.definition) {
       const field = this.definition[prop]
-      if (!(prop in val)) {
-        if (isOptional(field)) {
-          continue;
-        }
+      if(!(prop in val)) {
+        if(allowsMissing(field)) continue;
+        if(allowsOptional(field)) continue;
 
         errs.push(`missing key '${prop}'`);
         continue;
       }
 
-      const result = keyType(field).check(val[prop]);
+      const valField = val[prop];
+      if(valField === undefined && allowsOptional(field)) continue;
+
+      const result = keyType(field).check(valField);
       if(result instanceof Err) errs.push(result.message);
     }
 
@@ -113,4 +129,8 @@ export function exact<T extends TypeStruct>(def: T): Struct<T> {
 
 export function optional<T extends Type<any>>(check: T): OptionalKey<T> {
   return new OptionalKey(check);
+}
+
+export function allowMissing<T extends Type<any>>(check: T): MissingKey<T> {
+  return new MissingKey(check);
 }

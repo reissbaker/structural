@@ -1,13 +1,12 @@
 import { Type, KeyTrackingType, KeyTrackResult, Intersect, Either, Comment } from "../type";
-import { Struct, optional, OptionalKey, TypeStruct, UnwrappedTypeStruct } from "./struct";
-import { undef } from "./primitives";
+import { Struct, optional, MissingKey, TypeStruct, UnwrappedTypeStruct, FieldDef, OptionalKey } from "./struct";
 import { Dict } from "./dict";
 import { SetType } from "./set";
 import { Arr } from "./array";
 import { MapType } from "./map";
 
-
-type MakeOptional<T extends Type<any> | OptionalKey<any>> = T extends Type<any> ? OptionalKey<T> : T;
+type MakeOptional<T extends FieldDef> = T extends Type<any> ? OptionalKey<T> :
+  T extends MissingKey<infer K> ? OptionalKey<K> : T;
 
 type DeepPartialTypeStruct<T extends TypeStruct> = {
   [K in keyof T]: T[K] extends Struct<infer T2> ? OptionalKey<Struct<DeepPartialTypeStruct<T2>>> :
@@ -25,13 +24,17 @@ export class PartialStruct<T extends TypeStruct> extends KeyTrackingType<Unwrapp
     const partialDef: Partial<PartialTypeStruct<T>> = {};
     for(const k in struct.definition) {
       const v = struct.definition[k];
-      if(v instanceof OptionalKey) {
+      if(v instanceof MissingKey) {
         //@ts-ignore
-        partialDef[k] = optional(v.type.or(undef));
+        partialDef[k] = optional(v.type);
+      }
+      else if(v instanceof OptionalKey) {
+        //@ts-ignore
+        partialDef[k] = optional(v.type);
       }
       else {
         //@ts-ignore
-        partialDef[k] = optional(v.or(undef));
+        partialDef[k] = optional(v);
       }
     }
     this.hiddenStruct = new Struct(partialDef as PartialTypeStruct<T>, struct.exact);
@@ -50,14 +53,18 @@ export class DeepPartial<T extends TypeStruct> extends KeyTrackingType<Unwrapped
     const partialDef: Partial<DeepPartialTypeStruct<T>> = {};
     for(const k in ogstruct.definition) {
       const v = ogstruct.definition[k];
-      if(v instanceof OptionalKey) {
+      if(v instanceof MissingKey) {
         //@ts-ignore
-        partialDef[k] = optional(v.type.or(undef));
+        partialDef[k] = optional(v.type);
+      }
+      else if(v instanceof OptionalKey) {
+        //@ts-ignore
+        partialDef[k] = optional(v.type);
       }
       else {
-        const orUndef = deepPartialKind(v).or(undef);
+        const deepKind = deepPartialKind(v);
         // @ts-ignore
-        partialDef[k] = optional(orUndef);
+        partialDef[k] = optional(deepKind);
       }
     }
     this.struct = new Struct(partialDef as DeepPartialTypeStruct<T>, ogstruct.exact);
