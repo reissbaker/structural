@@ -73,15 +73,24 @@ describe("subtype", () => {
     check.assert({ hi: "world" })
   });
 
-  test("rejects optional keys that exist, but are undefined", () => {
+  test("rejects allow-missing keys that exist, but are undefined", () => {
     const check = t.subtype({
       hi: t.str,
-      opt: t.optional(t.bool),
+      opt: t.allowMissing(t.bool),
     });
 
     expect(() => {
       check.assert({ hi: "world", opt: undefined })
     }).toThrow();
+  });
+
+  test("allows optional keys that exist, but are undefined", () => {
+    const check = t.subtype({
+      hi: t.str,
+      opt: t.optional(t.bool),
+    });
+
+    check.assert({ hi: "world", opt: undefined })
   });
 
   test("type inference allows omitting optional keys", () => {
@@ -171,9 +180,27 @@ describe("exact", () => {
   test("allows optional keys to be missing", () => {
     const check = t.exact({
       hi: t.str,
+      opt: t.allowMissing(t.bool),
+    });
+    check.assert({ hi: "world" });
+  });
+
+  test("allows optional keys to be missing", () => {
+    const check = t.exact({
+      hi: t.str,
       opt: t.optional(t.bool),
     });
     check.assert({ hi: "world" });
+  });
+
+  test("rejects allow-missing keys that exist, but are undefined", () => {
+    const check = t.exact({
+      hi: t.str,
+      opt: t.allowMissing(t.bool),
+    });
+    expect(() => {
+      check.assert({ hi: "world", opt: undefined })
+    }).toThrow();
   });
 
   test("rejects optional keys that exist, but are undefined", () => {
@@ -181,9 +208,7 @@ describe("exact", () => {
       hi: t.str,
       opt: t.optional(t.bool),
     });
-    expect(() => {
-      check.assert({ hi: "world", opt: undefined })
-    }).toThrow();
+    check.assert({ hi: "world", opt: undefined })
   });
 
   test("rejects supertypes", () => {

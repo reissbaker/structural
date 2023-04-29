@@ -46,7 +46,7 @@ describe("toTypescript", () => {
       const c = t.deepPartial(b);
       const str = t.toTypescript({ a, b, c });
       expect(str).toEqual(
-        "type a = {\n  hi: string,\n};\n\ntype b = {\n  a: a,\n};\n\ntype c = Partial<{\n  a?: Partial<a>\n    | undefined,\n}>;"
+        "type a = {\n  hi: string,\n};\n\ntype b = {\n  a: a,\n};\n\ntype c = Partial<{\n  a?: Partial<a>,\n}>;"
       );
     });
     test("Doesn't ref out inner structs if they are further nested in dicts", () => {
@@ -59,7 +59,7 @@ describe("toTypescript", () => {
       const c = t.deepPartial(b);
       const str = t.toTypescript({ a, b, c });
       expect(str).toEqual(
-        "type a = {\n  hi: string,\n};\n\ntype b = {\n  a: {[key: string]: a},\n};\n\ntype c = Partial<{\n  a?: {[key: string]: Partial<a>}\n    | undefined,\n}>;"
+        "type a = {\n  hi: string,\n};\n\ntype b = {\n  a: {[key: string]: a},\n};\n\ntype c = Partial<{\n  a?: {[key: string]: Partial<a>},\n}>;"
       );
     });
     test("Doesn't ref out inner structs if they are commented", () => {
@@ -72,7 +72,7 @@ describe("toTypescript", () => {
       const c = t.deepPartial(b);
       const str = t.toTypescript({ a, b, c });
       expect(str).toEqual(
-        "type a = {\n  hi: string,\n};\n\ntype b = {\n  // hi\n  a: a,\n};\n\ntype c = Partial<{\n  // hi\n  a?: Partial<a>\n    | undefined,\n}>;"
+        "type a = {\n  hi: string,\n};\n\ntype b = {\n  // hi\n  a: a,\n};\n\ntype c = Partial<{\n  // hi\n  a?: Partial<a>,\n}>;"
       );
     });
   });

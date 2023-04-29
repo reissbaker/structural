@@ -3,7 +3,7 @@ import { TypeOf } from "./checks/type-of";
 import { InstanceOf } from "./checks/instance-of";
 import { Value } from "./checks/value";
 import { Arr } from "./checks/array";
-import { Struct, OptionalKey } from "./checks/struct";
+import { Struct, MissingKey, OptionalKey } from "./checks/struct";
 import { Dict } from "./checks/dict";
 import { MapType } from "./checks/map";
 import { SetType } from "./checks/set";
@@ -198,6 +198,11 @@ function fromStruct(s: Struct<any>, opts: ToTypescriptOpts) {
     const key = keys[i];
     const keyType = [ key ];
     const val = s.definition[key];
+    if(val instanceof MissingKey) {
+      throw new Error(
+        "missing(...) fields can't be represented in TypeScript; consider using optional(...)"
+      );
+    }
     if(val instanceof OptionalKey) keyType.push("?");
     keyType.push(": ");
     const stripped = stripOuterComments(val);
