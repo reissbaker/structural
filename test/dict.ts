@@ -11,7 +11,7 @@ test("converts to typescript with custom key name", () => {
 test("converts to multiline typescript if necessary", () => {
   expect(t.toTypescript(t.dict(t.exact({
     key: t.bool,
-  })))).toEqual("{\n  [key: string]: {\n    key: boolean,\n  }\n}");
+  })).keyName("k"))).toEqual("{\n  [k: string]: {\n    key: boolean,\n  }\n}");
 });
 
 test("accepts empty dictionaries", () => {

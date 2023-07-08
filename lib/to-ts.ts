@@ -286,7 +286,7 @@ function fromDict(d: Dict<any>, opts: ToTypescriptOpts) {
   // For multiline values, return a multiline dict
   return [
     "{",
-    `${i}${opts.indent}[key: string]: ${valString}`,
+    `${i}${opts.indent}[${d.namedKey}: string]: ${valString}`,
     `${i}}`,
   ].join("\n");
 }
