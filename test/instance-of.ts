@@ -7,6 +7,12 @@ test("converts to typescript", () => {
   expect(t.toTypescript(t.instanceOf(A))).toEqual("A");
 });
 
+test("can't convert to JSON Schema", () => {
+  expect(() => {
+    t.toJSONSchema("sure", t.instanceOf(class {}))
+  }).toThrow();
+});
+
 test("throws an error on anon classes", () => {
   expect(() => {
     return t.toTypescript(t.instanceOf(class {}));

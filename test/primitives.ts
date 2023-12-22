@@ -4,6 +4,13 @@ describe("num", () => {
   test("converts to typescript", () => {
     expect(t.toTypescript(t.num)).toEqual("number");
   });
+  test("converts to JSON schema", () => {
+    expect(t.toJSONSchema("num", t.num)).toEqual({
+      $schema: t.JSON_SCHEMA_VERSION,
+      title: "num",
+      type: "number",
+    });
+  });
 
   test("accepts numbers", () => {
     t.num.assert(1);
@@ -25,6 +32,14 @@ describe("str", () => {
     expect(t.toTypescript(t.str)).toEqual("string");
   });
 
+  test("converts to JSON Schema", () => {
+    expect(t.toJSONSchema("str", t.str)).toEqual({
+      $schema: t.JSON_SCHEMA_VERSION,
+      title: "str",
+      type: "string",
+    });
+  });
+
   test("accepts strings", () => {
     t.str.assert("hi");
   });
@@ -39,6 +54,14 @@ describe("str", () => {
 describe("bool", () => {
   test("converts to typescript", () => {
     expect(t.toTypescript(t.bool)).toEqual("boolean");
+  });
+
+  test("converts to JSON Schema", () => {
+    expect(t.toJSONSchema("bool", t.bool)).toEqual({
+      $schema: t.JSON_SCHEMA_VERSION,
+      title: "bool",
+      type: "boolean",
+    });
   });
 
   test("accepts booleans", () => {
@@ -57,6 +80,12 @@ describe("fn", () => {
     expect(t.toTypescript(t.fn)).toEqual("Function");
   });
 
+  test("can't convert to JSON Schema", () => {
+    expect(() => {
+      t.toJSONSchema("no", t.fn);
+    }).toThrow();
+  });
+
   test("accepts functions", () => {
     t.fn.assert(() => {});
   });
@@ -71,6 +100,12 @@ describe("fn", () => {
 describe("sym", () => {
   test("converts to typescript", () => {
     expect(t.toTypescript(t.sym)).toEqual("Symbol");
+  });
+
+  test("can't convert to JSON Schema", () => {
+    expect(() => {
+      t.toJSONSchema("no", t.sym);
+    }).toThrow();
   });
 
   test("accepts symbols", () => {
@@ -89,6 +124,12 @@ describe("undef", () => {
     expect(t.toTypescript(t.undef)).toEqual("undefined");
   });
 
+  test("can't convert to JSON Schema", () => {
+    expect(() => {
+      t.toJSONSchema("no", t.undef);
+    }).toThrow();
+  });
+
   test("accepts undefined", () => {
     t.undef.assert(undefined);
   });
@@ -105,6 +146,14 @@ describe("nil", () => {
     expect(t.toTypescript(t.nil)).toEqual("null");
   });
 
+  test("converts to JSON Schema", () => {
+    expect(t.toJSONSchema("null", t.nil)).toEqual({
+      $schema: t.JSON_SCHEMA_VERSION,
+      title: "null",
+      type: "null",
+    });
+  });
+
   test("accepts null", () => {
     t.nil.assert(null);
   });
@@ -119,6 +168,15 @@ describe("nil", () => {
 describe("obj", () => {
   test("converts to typescript", () => {
     expect(t.toTypescript(t.obj)).toEqual("Object");
+  });
+
+  test("converts to JSON schema", () => {
+    expect(t.toJSONSchema("obj", t.obj)).toEqual({
+      $schema: t.JSON_SCHEMA_VERSION,
+      title: "obj",
+      type: "object",
+      properties: {},
+    });
   });
 
   test("accepts objects", () => {

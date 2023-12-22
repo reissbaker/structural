@@ -4,6 +4,16 @@ test("converts to typescript", () => {
   expect(t.toTypescript(t.dict(t.str))).toEqual("{[key: string]: string}");
 });
 
+test("converts to JSON schema", () => {
+  expect(t.toJSONSchema("dict", t.dict(t.str))).toEqual({
+    $schema: t.JSON_SCHEMA_VERSION,
+    title: "dict",
+    type: "object",
+    properties: {},
+    additionalProperties: { type: "string" },
+  });
+});
+
 test("converts to typescript with custom key name", () => {
   expect(t.toTypescript(t.dict(t.str).keyName("name"))).toEqual("{[name: string]: string}")
 });

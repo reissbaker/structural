@@ -17,6 +17,29 @@ describe("toTypescript", () => {
         "type a = {\n  hi: string,\n};\n\ntype b = Partial<a>;"
       );
     });
+    test("Converts to JSON Schema, only affecting top-level keys", () => {
+      const a = t.subtype({
+        hi: t.str,
+      });
+      const b = t.subtype({
+        world: a,
+      });
+      expect(t.toJSONSchema("partial", t.partial(b))).toEqual({
+        $schema: t.JSON_SCHEMA_VERSION,
+        title: "partial",
+        type: "object",
+        required: [],
+        properties: {
+          world: {
+            type: "object",
+            required: [ "hi" ],
+            properties: {
+              hi: { type: "string" },
+            },
+          },
+        },
+      });
+    });
   });
 
   describe("deepPartial", () => {
@@ -74,6 +97,29 @@ describe("toTypescript", () => {
       expect(str).toEqual(
         "type a = {\n  hi: string,\n};\n\ntype b = {\n  // hi\n  a: a,\n};\n\ntype c = Partial<{\n  // hi\n  a?: Partial<a>,\n}>;"
       );
+    });
+    test("Converts to JSON Schema", () => {
+      const a = t.subtype({
+        hi: t.str,
+      });
+      const b = t.subtype({
+        a,
+      });
+      expect(t.toJSONSchema("deepPartial", t.deepPartial(b))).toEqual({
+        $schema: t.JSON_SCHEMA_VERSION,
+        title: "deepPartial",
+        type: "object",
+        required: [],
+        properties: {
+          a: {
+            type: "object",
+            required: [],
+            properties: {
+              hi: { type: "string" },
+            },
+          },
+        },
+      });
     });
   });
 });

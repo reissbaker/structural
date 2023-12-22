@@ -6,6 +6,24 @@ test("converts to typescript", () => {
   )).toEqual("string");
 });
 
+test("can't convert to JSON Schema", () => {
+  expect(() => {
+    t.toJSONSchema("bye", t.is("something", (val: any): val is string => typeof val === "string"));
+  }).toThrow();
+});
+
+test("can convert to JSON schema when errorOnIs is false", () => {
+  expect(t.toJSONSchema(
+    "str",
+    t.is("string", (val: any): val is string => typeof val === "string"),
+    { errorOnIs: false },
+  )).toEqual({
+    $schema: t.JSON_SCHEMA_VERSION,
+    title: "str",
+    description: "string",
+  });
+});
+
 test("passes when the fn returns true", () => {
   const check = t.is('string', (val: any): val is string => typeof val === 'string')
   check.assert('foo');

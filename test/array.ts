@@ -4,6 +4,15 @@ test("converts to typescript", () => {
   expect(t.toTypescript(t.array(t.bool))).toEqual("Array<boolean>");
 });
 
+test("converts to JSONSchema", () => {
+  expect(t.toJSONSchema("arr<bool>", t.array(t.bool))).toEqual({
+    $schema: t.JSON_SCHEMA_VERSION,
+    title: "arr<bool>",
+    type: "array",
+    items: { type: "boolean" },
+  });
+});
+
 test("accepts the empty array", () => {
   const check = t.array(t.num);
   check.assert([]);

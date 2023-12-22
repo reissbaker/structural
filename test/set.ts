@@ -4,6 +4,12 @@ test("converts to typescript", () => {
   expect(t.toTypescript(t.set(t.num))).toEqual("Set<number>");
 });
 
+test("can't convert to JSON Schema", () => {
+  expect(() => {
+    t.toJSONSchema("no", t.set(t.num));
+  }).toThrow();
+});
+
 test("accepts values that match", () => {
   const check = t.set(t.num);
   const set = new Set<number>();
