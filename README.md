@@ -26,6 +26,7 @@ integrating with tools that understand TS type syntax.
 * [Custom validations](#custom-validations)
 * [Slicing keys](#slicing-keys)
 * [Generating TypeScript](#generating-typescript)
+* [Generating JSON Schema](#generating-json-schema)
 
 ## Why?
 
@@ -34,7 +35,7 @@ following:
 
 1. Write a bunch of `if` statements to validate each piece of data;
 2. Write piles of schema validation code in various verbose languages (e.g.
-   JSON schema, XML DTDs / Relax-NG / Schema / etc.);
+   JSON Schema, XML DTDs / Relax-NG / Schema / etc.);
 3. Or skip validating the data and pray.
 
 Structural allows you to skip writing validation code and instead encode
@@ -45,7 +46,7 @@ code.
 Here's a simple example:
 
 ```typescript
-import * as t from "structural";
+import { t } from "structural";
 
 // Define a User type
 const User = t.subtype({
@@ -190,7 +191,7 @@ Here's a more advanced example, showing how to compose types using type algebra
 (`or` and `and`):
 
 ```typescript
-import * as t from "structural";
+import { t } from "structural";
 
 const Person = t.subtype({
   name: t.str,
@@ -242,7 +243,7 @@ Structural supports writing custom validation functions that check values at
 runtime. Functions should return true if the check passes, and false otherwise.
 
 ```typescript
-import * as t;
+import { t } from "structural";
 
 const NonZeroNumber = t.num.validate(num => num !== 0);
 
@@ -328,7 +329,7 @@ Call to `slice` work even through the algebraic types created with `.and` and
 `.or`; for example:
 
 ```typescript
-import * as t from "structural";
+import { t } from "structural";
 
 const Person = t.subtype({
   name: t.str,
@@ -377,7 +378,9 @@ You can automatically generate valid TypeScript as source code strings from
 Structural types with the `toTypescript` function. For example:
 
 ```typescript
-const ts = t.toTypescript(t.subtype({
+import { toTypescript, t } from "structural";
+
+const ts = toTypescript(t.subtype({
   id: t.num,
 }));
 ```
@@ -398,7 +401,7 @@ const User = t.subtype({
   id: t.num,
 });
 
-t.toTypescript({ User });
+toTypescript({ User });
 ```
 
 Which generates:
@@ -449,7 +452,7 @@ const User = t.subtype({
 });
 ```
 
-Running `t.toTypescript({ User })` on that struct would generate:
+Running `toTypescript({ User })` on that struct would generate:
 
 ```typescript
 type User = {
@@ -488,7 +491,7 @@ By default, the `dict` type will name its keys `key`, like so:
 
 ```typescript
 const OrderCount = t.dict(t.num);
-t.toTypescript({ OrderCount });
+toTypescript({ OrderCount });
 ```
 ```typescript
 type OrderCount = {[key: string]: number};
@@ -500,7 +503,7 @@ might be useful to have the key be named `customer` for readability:
 
 ```typescript
 const OrderCount = t.dict(t.num).keyName("customer");
-t.toTypescript({ OrderCount });
+toTypescript({ OrderCount });
 ```
 ```typescript
 type OrderCount = {[customer: string]: number};
@@ -524,7 +527,7 @@ const Business = t.subtype({
   customers: t.array(Customer),
 });
 
-const businessTs = t.toTypescript(Business);
+const businessTs = toTypescript(Business);
 ```
 
 This would generate the following two type definitions:
@@ -585,7 +588,7 @@ const Business = t.subtype({
   customers: t.array(Customer),
 });
 
-const businessTs = t.toTypescript(Business, {
+const businessTs = toTypescript(Business, {
   useReference: {
     Customer,
   },
@@ -609,7 +612,7 @@ The `assignToType` option auto-generates the syntax to assign a type a name,
 and inserting a semicolon after the type definition. For example:
 
 ```typescript
-const ts = t.toTypescript(t.either(t.num, t.str), {
+const ts = toTypescript(t.either(t.num, t.str), {
   assignToType: "id",
 });
 ```
@@ -619,4 +622,103 @@ This would result in `ts` having the following value:
 ```typescript
 type id = number
   | string;
+```
+
+## Generating JSON Schema
+
+For interop with other languages or APIs, rather than writing JSON Schema by
+hand, you can instead write Structural types and generate the JSON Schema using
+the `toJSONSchema` function:
+
+```typescript
+import { toJSONSchema, t } from "structural";
+
+const User = t.subtype({
+  name: t.str,
+});
+
+const schema = toJSONSchema("User", User);
+// Generates:
+{
+  $schema: "https://json-schema.org/draft/2020-12/schema",
+  title: "User",
+  type: "object",
+  required: [ "name" ],
+  properties: {
+    name: { type: "string" },
+  },
+}
+```
+
+The `$schema` and `title` fields only appear at the top level of the generated
+schema; here's what a nested type would look like:
+
+```typescript
+import { toJSONSchema, t } from "structural";
+
+const Pet = t.value("dog").or(t.value("cat"));
+const User = t.subtype({
+  name: t.str,
+  pet: t.optional(Pet),
+});
+
+const schema = toJSONSchema("User", User);
+// Generates:
+{
+  $schema: "https://json-schema.org/draft/2020-12/schema",
+  title: "User",
+  type: "object",
+  required: [ "name" ],
+  properties: {
+    name: { type: "string" },
+    pet: {
+      enum: [ "dog", "cat" ],
+    },
+  },
+}
+```
+
+Unions will either generate JSON Schema enums (if all of the union members are
+values), or `anyOf` types. Intersections will generate `allOf` types.
+
+### Unsupported types in JSON Schema
+
+Attempting to convert non-JSON types into JSON Schema will throw an error; for
+example, Sets, Maps, functions, and `undefined` will throw errors. By default,
+the following will throw errors, but can be optionally converted into
+`description` keys by passing in options:
+
+* Is (set `errorOnIs: false`)
+* Validation (set `errorOnValidations: false`)
+
+By default, `never` will also error. Setting `errorOnNever: false` will convert
+`never` into impossible JSON Schemas, but if you do that, it will be impossible
+for anyone to send you valid JSON of that schema.
+
+### Comments
+
+Structural `.comment` annotations will be converted into `description` keys.
+For example:
+
+```typescript
+import { toJSONSchema, t } from "structural";
+
+const User = t.subtype({
+  name: t.str.comment("The user's full name"),
+});
+
+const schema = toJSONSchema("User", User);
+// Generates:
+{
+  $schema: "https://json-schema.org/draft/2020-12/schema",
+  title: "User",
+  type: "object",
+  required: [ "name" ],
+  properties: {
+    name: {
+      type: "string",
+      description: "The user's full name",
+    },
+  },
+}
 ```
