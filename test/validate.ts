@@ -6,6 +6,25 @@ test("converts to typescript", () => {
   ).toEqual("// greater than zero\nnumber");
 });
 
+test("converts to JSON schema as a comment when errorOnValidations is false", () => {
+  expect(
+    t.toJSONSchema(">0", t.num.validate("greater than zero", (num) => num > 0), {
+      errorOnValidations: false,
+    })
+  ).toEqual({
+    $schema: t.JSON_SCHEMA_VERSION,
+    title: ">0",
+    description: "greater than zero",
+    type: "number",
+  });
+});
+
+test("can't convert to JSON Schema by default", () => {
+  expect(() => {
+    t.toJSONSchema(">0", t.num.validate("greater than zero", (num) => num > 0))
+  }).toThrow();
+});
+
 test("passes when the fn returns true", () => {
   const check = t.num.validate("between five and ten", (num) => {
     return num > 5 && num < 10;

@@ -1,16 +1,16 @@
-import { Comment, Either, Intersect, Validation } from "./type";
-import { TypeOf } from "./checks/type-of";
-import { InstanceOf } from "./checks/instance-of";
-import { Value } from "./checks/value";
-import { Arr } from "./checks/array";
-import { Struct } from "./checks/struct";
-import { Dict } from "./checks/dict";
-import { MapType } from "./checks/map";
-import { SetType } from "./checks/set";
-import { Any } from "./checks/any";
-import { Is } from "./checks/is";
-import { Never } from "./checks/never";
-import { DeepPartial, PartialStruct } from "./checks/partial";
+import type { Comment, Either, Intersect, Validation } from "./type";
+import type { TypeOf } from "./checks/type-of";
+import type { InstanceOf } from "./checks/instance-of";
+import type { Value } from "./checks/value";
+import type { Arr } from "./checks/array";
+import type { Struct } from "./checks/struct";
+import type { Dict } from "./checks/dict";
+import type { MapType } from "./checks/map";
+import type { SetType } from "./checks/set";
+import type { Any } from "./checks/any";
+import type { Is } from "./checks/is";
+import type { Never } from "./checks/never";
+import type { DeepPartial, PartialStruct } from "./checks/partial";
 
 export type Kind = Any
                  | Never

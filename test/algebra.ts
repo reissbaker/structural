@@ -5,6 +5,26 @@ describe("or", () => {
     expect(t.toTypescript(t.num.or(t.str))).toEqual("number\n  | string");
   });
 
+  test("converts to JSON Schema", () => {
+    expect(t.toJSONSchema("union", t.num.or(t.str).or(t.bool))).toEqual({
+      $schema: t.JSON_SCHEMA_VERSION,
+      title: "union",
+      anyOf: [
+        { type: "number" },
+        { type: "string" },
+        { type: "boolean" },
+      ],
+    });
+  });
+
+  test("converts union of value types to enum JSON Schema", () => {
+    expect(t.toJSONSchema("enum", t.value("hello").or(t.value("world")).or(t.value(1)))).toEqual({
+      $schema: t.JSON_SCHEMA_VERSION,
+      title: "enum",
+      enum: [ "hello", "world", 1 ],
+    });
+  });
+
   test("accepts either of the given checks", () => {
     const check = t.num.or(t.str);
     check.assert(5);
@@ -54,6 +74,35 @@ describe("or", () => {
 });
 
 describe("and", () => {
+  test("converts to typescript", () => {
+    const check = t.subtype({ hi: t.str }).and(t.subtype({ foo: t.str }));
+    expect(t.toTypescript(check)).toEqual(`{\n  hi: string,\n}\n  & {\n    foo: string,\n  }`);
+  });
+
+  test("converts to JSON Schema", () => {
+    const check = t.subtype({ hi: t.str }).and(t.subtype({ foo: t.optional(t.str) }));
+    expect(t.toJSONSchema("check", check)).toEqual({
+      $schema: t.JSON_SCHEMA_VERSION,
+      title: "check",
+      allOf: [
+        {
+          type: "object",
+          required: [ "hi" ],
+          properties: {
+            hi: { type: "string" },
+          },
+        },
+        {
+          type: "object",
+          required: [],
+          properties: {
+            foo: { type: "string" },
+          },
+        },
+      ],
+    });
+  });
+
   test("accepts values that pass both of the checks", () => {
     const check = t.subtype({ hi: t.str }).and(t.subtype({ foo: t.str }));
     check.assert({

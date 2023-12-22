@@ -4,6 +4,12 @@ test("converts to typescript", () => {
   expect(t.toTypescript(t.map(t.num, t.bool))).toEqual("Map<number, boolean>");
 });
 
+test("can't convert to JSON Schema", () => {
+  expect(() => {
+    t.toJSONSchema("bye", t.map(t.num, t.bool))
+  }).toThrow();
+});
+
 test("accepts empty maps", () => {
   const check = t.map(t.num, t.str);
   check.assert(new Map());

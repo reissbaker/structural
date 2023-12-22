@@ -9,3 +9,10 @@ test("accepts anything", () => {
 test("converts to typescript", () => {
   expect(t.toTypescript(t.any)).toEqual("any");
 });
+
+test("converts to JSON schema", () => {
+  expect(t.toJSONSchema("any", t.any)).toEqual({
+    $schema: t.JSON_SCHEMA_VERSION,
+    title: "any",
+  });
+});

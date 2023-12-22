@@ -4,6 +4,22 @@ test("converts to typescript", () => {
   expect(t.toTypescript(t.never)).toEqual("never");
 });
 
+test("can't convert to JSON schema by default", () => {
+  expect(() => {
+    t.toJSONSchema("huh", t.never);
+  }).toThrow();
+});
+
+test("converts to JSON Schema if errorOnNever is false", () => {
+  expect(t.toJSONSchema("huh", t.never, {
+    errorOnNever: false,
+  })).toEqual({
+    $schema: t.JSON_SCHEMA_VERSION,
+    title: "huh",
+    allOf: [ { type: "string" }, { type: "number" } ],
+  });
+});
+
 // what a test.
 test("accepts nothing", () => {
   expect(() => {
