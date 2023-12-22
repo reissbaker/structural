@@ -3,7 +3,7 @@ import * as t from "..";
 test("converts a whole bunch of types", () => {
   const Customer = t.subtype({
     orders: t.num,
-    migrated: t.optional(t.bool),
+    migrated: t.optional(t.bool.comment("Are they migrated to the new system?")),
   });
   const Business = t.subtype({
     users: t.array(Customer),
@@ -30,7 +30,10 @@ test("converts a whole bunch of types", () => {
           required: [ "orders" ],
           properties: {
             orders: { type: "number" },
-            migrated: { type: "boolean" },
+            migrated: {
+              type: "boolean",
+              description: "Are they migrated to the new system?",
+            },
           },
         },
       },
