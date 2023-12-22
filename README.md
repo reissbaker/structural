@@ -13,7 +13,8 @@ integration with its type system, allow TypeScript users to automatically get
 compile-time type inference for their Structural types in addition to runtime
 type checking. Structural types can also be automatically converted to actual,
 executable TypeScript automatically, for generating documentation or
-integrating with tools that understand TS type syntax.
+integrating with tools that understand TS type syntax, or converted to JSON
+Schema for integrating with non-JS/TS-based tooling.
 
 ### Table of contents
 
@@ -150,28 +151,24 @@ write the type out again in the rest of your code: it's automatically inferred.
   "properties": {
     "id": {
       "type": "number",
-      "description": "The user ID"
     },
     "name": {
       "type": "string",
-      "description": "The name of the user",
     },
     "login": {
       "type": "string",
-      "description": "The login username",
     },
     "hireable": {
       "type": "boolean",
-      "description": "Is the user hireable",
     }
   }
 }
 ```
 
-Clocking in at 23 lines of code, it's nearly 4x more verbose than the
-equivalent Structural validation. And for TypeScript users, JSON Schema is even
-worse! You'll also need the following redundant type declaration somewhere in
-your source files:
+Clocking in at 19 lines of code, it's over 3x more verbose than the equivalent
+Structural validation. And for TypeScript users, JSON Schema is even worse!
+You'll also need the following redundant type declaration somewhere in your
+source files:
 
 ```typescript
 type UserType = {
@@ -184,6 +181,14 @@ type UserType = {
 
 And every time you update the JSON Schema, you'll need to keep the type in
 sync, since it can't be inferred at compile time.
+
+If you really need JSON Schema -- for example, if you're integrating with
+external systems not written in JavaScript or TypeScript -- you can generate
+JSON Schema from Structural types in a single line of code:
+
+```typescript
+toJSONSchema("User schema", User)
+```
 
 ## Advanced type system features
 
