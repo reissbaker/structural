@@ -46,3 +46,16 @@ test("rejects non-maps", () => {
     check.assert(null);
   }).toThrow();
 });
+
+test("sliced nested objects", () => {
+  const nested = t.subtype({ id: t.str });
+  const check = t.map(t.str, nested);
+  const map = new Map<string, t.GetType<typeof nested>>();
+  map.set("hello", {
+    id: "world",
+    name: "blarg",
+  } as t.GetType<typeof nested>);
+  const result = check.slice(map);
+  const data: any = result.get("hello");
+  expect(data["name"]).toBeUndefined();
+});

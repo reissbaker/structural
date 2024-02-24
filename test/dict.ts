@@ -66,3 +66,17 @@ test("rejects arrays", () => {
     check.assert([ ]);
   }).toThrow();
 });
+
+test("sliced nested objects", () => {
+  const nested = t.subtype({ id: t.str });
+  const check = t.dict(nested);
+  const dict: { [key: string]: any } = {};
+  dict["hello"] = {
+    id: "world",
+    name: "blarg",
+  };
+  const result = check.slice(dict);
+  const data: any = result["hello"];
+  expect(data["id"]).toBe("world");
+  expect(data["name"]).toBeUndefined();
+});

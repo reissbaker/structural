@@ -293,7 +293,7 @@ export class Intersect<L, R> extends KeyTrackingType<L&R> {
  * Given a type and a value, safely check it, returning a KeyTrackResult for it. This function works
  * regardless of whether or not the underlying type is a KeyTrackingType.
  */
-function checkTrackKeys<T>(check: Type<T>, val: any): KeyTrackResult<T> {
+export function checkTrackKeys<T>(check: Type<T>, val: any): KeyTrackResult<T> {
   if(check instanceof KeyTrackingType) {
     return check.checkTrackKeys(val);
   }

@@ -21,6 +21,20 @@ export class Arr<T> extends Type<Array<T>> {
     // If we got this far, there were no errors; it's an Array<T>
     return val as Array<T>;
   }
+
+  sliceResult(val: any): Result<Array<T>> {
+    if(!Array.isArray(val)) return new Err(`${val} is not an array`);
+
+    const result: T[] = [];
+    for(const el of val) {
+      const sliced = this.elementType.slice(el);
+      // Don't bother collecting all errors in an array: for long arrays this is very obnoxious
+      if(result instanceof Err) return new Err(result.message);
+      result.push(sliced);
+    }
+
+    return result;
+  }
 }
 
 export function array<T>(t: Type<T>): Arr<T> {
