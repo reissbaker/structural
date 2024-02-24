@@ -2,9 +2,6 @@ import { Result } from "../result";
 import { Type, DefaultIntersect, Either, Comment } from "../type";
 import { Struct, optional, MissingKey, TypeStruct, UnwrappedTypeStruct, FieldDef, OptionalKey, MergeIntersect } from "./struct";
 import { Dict } from "./struct";
-import { SetType } from "./set";
-import { Arr } from "./array";
-import { MapType } from "./map";
 
 type MakeOptional<T extends FieldDef> = T extends Type<any> ? OptionalKey<T> :
   T extends MissingKey<infer K> ? OptionalKey<K> : T;
@@ -52,9 +49,6 @@ export const Nested = [
   Struct,
   PartialStruct,
   Dict,
-  SetType,
-  MapType,
-  Arr,
   Either,
   DefaultIntersect,
   MergeIntersect,
@@ -75,9 +69,6 @@ function handleNested(kind: NestedType): Type<any> {
   if(kind instanceof PartialStruct) return deepPartial(kind.struct);
   if(kind instanceof Comment) return new Comment(kind.commentStr, deepPartialKind(kind.wrapped));
   if(kind instanceof Dict) return new Dict(deepPartialKind(kind.valueType), kind.namedKey);
-  if(kind instanceof SetType) return new SetType(deepPartialKind(kind.valueType));
-  if(kind instanceof MapType) return new MapType(deepPartialKind(kind.keyType), deepPartialKind(kind.valueType));
-  if(kind instanceof Arr) return new Arr(deepPartialKind(kind.elementType));
   if(kind instanceof Either) return new Either(deepPartialKind(kind.l), deepPartialKind(kind.r));
   if(kind instanceof MergeIntersect) return new DefaultIntersect(deepPartialKind(kind.l), deepPartialKind(kind.r));
   return new DefaultIntersect(deepPartialKind(kind.l), deepPartialKind(kind.r));
