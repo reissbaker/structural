@@ -36,3 +36,14 @@ test("rejects non-arrays", () => {
     check.assert(null);
   }).toThrow();
 });
+
+test("sliced nested objects", () => {
+  const check = t.array(t.subtype({
+    id: t.str,
+  }));
+  const result = check.slice([
+    { id: "hello", name: "world" }
+  ]);
+  const data: any = result[0];
+  expect(data["name"]).toBeUndefined();
+});

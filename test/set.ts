@@ -38,3 +38,16 @@ test("rejects non-sets", () => {
     check.assert(null);
   }).toThrow();
 });
+
+test("sliced nested objects", () => {
+  const nested = t.subtype({ id: t.str });
+  const check = t.set(nested);
+  const set = new Set<t.GetType<typeof nested>>();
+  set.add({
+    id: "world",
+    name: "blarg",
+  } as t.GetType<typeof nested>);
+  const result = check.slice(set);
+  const data: any = Array.from(result)[0];
+  expect(data["name"]).toBeUndefined();
+});
