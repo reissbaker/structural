@@ -9,7 +9,7 @@ import { SetType } from "./checks/set";
 import { Any } from "./checks/any";
 import { Is } from "./checks/is";
 import { Never } from "./checks/never";
-import { PartialStruct, DeepPartial } from "./checks/partial";
+import { PartialStruct } from "./checks/partial";
 import { Kind } from "./kind";
 
 export const JSON_SCHEMA_VERSION = "https://json-schema.org/draft/2020-12/schema" as const;
@@ -124,7 +124,6 @@ function typeToSchema(type: Kind, options: Required<Options>): JSONSchema {
   }
   if(type instanceof Is) return fromIs(type, options);
   if(type instanceof Never) return fromNever(type, options);
-  if(type instanceof DeepPartial) return fromDeepPartial(type, options);
 
   return fromPartial(type, options);
 }
@@ -271,12 +270,6 @@ function fromNever(_: Never, options: Required<Options>): JSONSchema {
   return {
     allOf: [ { type: "string" }, { type: "number" } ],
   };
-}
-
-function fromDeepPartial(type: DeepPartial<any>, options: Required<Options>): JSONSchema {
-  // DeepPartial's .struct accessor is actually a rewritten struct with all keys made deeply
-  // optional
-  return fromStruct(type.struct, options);
 }
 
 function fromPartial(type: PartialStruct<any>, options: Required<Options>): JSONSchema {

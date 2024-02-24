@@ -9,7 +9,7 @@ import type { SetType } from "./checks/set";
 import type { Any } from "./checks/any";
 import type { Is } from "./checks/is";
 import type { Never } from "./checks/never";
-import type { DeepPartial, PartialStruct } from "./checks/partial";
+import type { PartialStruct } from "./checks/partial";
 
 export type Kind = Any
                  | Never
@@ -28,5 +28,4 @@ export type Kind = Any
                  | Is<any>
                  | Comment<any>
                  | PartialStruct<any>
-                 | DeepPartial<any>
                  ;
