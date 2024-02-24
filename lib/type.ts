@@ -49,8 +49,10 @@ export abstract class Type<T> {
    * -----------------------------------------------------------------------------------------------
    */
 
+  // The default intersection. Override this for mergeable types.
   and<R>(r: Type<R>): Type<T&R> {
-    return new Intersect(this, r);
+    if(r instanceof CustomCommutativeAndType) return r.and(this);
+    return new DefaultIntersect(this, r);
   }
 
   or<R>(r: Type<R>): Type<T|R> {
@@ -75,6 +77,7 @@ export abstract class Type<T> {
     return new Comment(comment, this);
   }
 }
+
 
 function assert<T>(result: Result<T>): T {
   if(result instanceof Err) throw result.toError();
@@ -138,82 +141,11 @@ export class Validation<T> extends Type<T> {
 }
 
 /*
- * Base key tracking type
- * -------------------------------------------------------------------------------------------------
- *
- * Types that operate on and track specific keys in objects have shared functionality surrounding
- * keeping track of those keys, making sure that exactness checks are run correctly, and that the
- * keys are sliced when `.slice` is called. This base class implements that behavior, and provides
- * an abstract `checkTrackKeys` method as an extension point for subclasses to implement, as opposed
- * to implementing `check` directly from the base Type class.
+ * Class to extend for custom .and functions -- other classes are aware of this class and will use
+ * it as an indication to switch to the custom .and
  */
 
-export type KeyTrack<T> = {
-  // The value being checked
-  val: T;
-
-  /*
-   * The set of known keys discovered so far. For example, for a struct defined as:
-   *
-   *     t.subtype({ hello: t.str })
-   *
-   * The known keys would be `[ "hello" ]`.
-   *
-   * For non-record types, the known keys will be null, since they don't have a known set of keys.
-   */
-  knownKeys: string[] | null;
-
-  // Whether or not the keys should be an exhaustive list of all possible keys ("exact"), or whether
-  // they're a subset of keys ("subtype"). If true, it's exhaustive; otherwise, it's a subset.
-  exact: boolean;
-}
-
-export type KeyTrackResult<T> = Err<T> | KeyTrack<T>;
-
-export abstract class KeyTrackingType<T> extends Type<T> {
-  // Extension point for subclasses
-  abstract checkTrackKeys(val: any): KeyTrackResult<T>;
-
-  /*
-   * Default implementation of `check` for this class. Do not reimplement this! Instead, implement
-   * `checkTrackKeys`, so that algebraic data types correctly understand how to slice and intersect
-   * your keys.
-   */
-  check(val: any): Result<T> {
-    const result = this.checkTrackKeys(val);
-    if(result instanceof Err) return result;
-
-    return exactError(val, result) || result.val;
-  }
-
-  /*
-   * Default implementation of `sliceResult` for this class. Do not reimplement this! Instead,
-   * implement `checkTrackKeys`, so that algebraic data types correctly understand how to slice and
-   * intersect your keys.
-   */
-  sliceResult(val: any): Result<T> {
-    const result = this.checkTrackKeys(val);
-    if(result instanceof Err) return result;
-
-    const err = exactError(val, result);
-    if(err) return err;
-
-    if(result.knownKeys == null) return result.val;
-
-    // If we got this far, it's satisfying a type that explicitly tracks keys. Slice the object to
-    // just the known set of keys.
-    const sliced: { [key: string]: any } = {};
-    for(const key of result.knownKeys) {
-      // only copy keys that exist.
-      // our type-checking already disallows {} fitting { foo: t.undef }
-      // because foo is missing, so this can't produce invalid results.
-      if (key in val) {
-        sliced[key] = val[key];
-      }
-    }
-
-    return sliced as T;
-  }
+export abstract class CustomCommutativeAndType<T> extends Type<T> {
 }
 
 /*
@@ -224,7 +156,7 @@ export abstract class KeyTrackingType<T> extends Type<T> {
  * children are themselves doing key tracking.
  */
 
-export class Either<L, R> extends KeyTrackingType<L|R> {
+export class Either<L, R> extends CustomCommutativeAndType<L|R> {
   readonly l: Type<L>;
   readonly r: Type<R>;
 
@@ -234,12 +166,27 @@ export class Either<L, R> extends KeyTrackingType<L|R> {
     this.r = r;
   }
 
-  checkTrackKeys(val: any): KeyTrackResult<L|R> {
-    const l = checkTrackKeys(this.l, val);
+  check(val: any): Result<L|R> {
+    const l = this.l.check(val);
     if(!(l instanceof Err)) return l;
-    const r = checkTrackKeys(this.r, val);
+    const r = this.r.check(val);
     if(!(r instanceof Err)) return r;
     return new Err(`${val} failed the following checks:\n${l.message}\n${r.message}`);
+  }
+
+  sliceResult(val: any): Result<L|R> {
+    const l = this.l.sliceResult(val);
+    if(!(l instanceof Err)) return l;
+    const r = this.r.sliceResult(val);
+    if(!(r instanceof Err)) return r;
+    return new Err(`${val} failed the following checks:\n${l.message}\n${r.message}`);
+  }
+
+  and<T>(type: Type<T>): Type<(L|R) & T> {
+    return new Either(
+      this.l.and(type),
+      this.r.and(type),
+    );
   }
 }
 
@@ -247,82 +194,35 @@ export class Either<L, R> extends KeyTrackingType<L|R> {
  * Intersect
  * -------------------------------------------------------------------------------------------------
  *
- * An intersection type. Extends the KeyTrackingType since it may need to track its children's keys,
- * if the children are themselves doing key tracking.
+ * The default intersection type for types. Note that this isn't used for mergeable types, which
+ * need to provide their own definition for .and
  */
 
-export class Intersect<L, R> extends KeyTrackingType<L&R> {
-  readonly l: Type<L>;
-  readonly r: Type<R>;
-
-  constructor(l: Type<L>, r: Type<R>) {
+export class DefaultIntersect<L, R> extends CustomCommutativeAndType<L&R> {
+  constructor(readonly l: Type<L>, readonly r: Type<R>) {
     super();
-
-    this.l = l;
-    this.r = r;
   }
 
-  checkTrackKeys(val: any): KeyTrackResult<L&R> {
-    const l = checkTrackKeys(this.l, val);
-    const r = checkTrackKeys(this.r, val);
-
-    if((l instanceof Err) && (r instanceof Err)) {
-      return new Err(`${val} failed the following checks:\n${l.message}\n${r.message}`);
-    }
+  check(val: any): Result<L&R> {
+    const l = this.l.check(val);
     if(l instanceof Err) return l;
+    const r = this.r.check(val);
     if(r instanceof Err) return r;
-
-    let knownKeys = null;
-    if(l.knownKeys && r.knownKeys) {
-      knownKeys = l.knownKeys.concat(r.knownKeys);
-    }
-
-    return {
-      knownKeys,
-      val: val as L&R,
-      exact: l.exact && r.exact,
-    }
-  }
-}
-
-/*
- * ### Key tracking helpers
- */
-
-/*
- * Given a type and a value, safely check it, returning a KeyTrackResult for it. This function works
- * regardless of whether or not the underlying type is a KeyTrackingType.
- */
-export function checkTrackKeys<T>(check: Type<T>, val: any): KeyTrackResult<T> {
-  if(check instanceof KeyTrackingType) {
-    return check.checkTrackKeys(val);
+    return val as L&R;
   }
 
-  const result = check.check(val);
-  if(result instanceof Err) return result;
-
-  return {
-    val: result,
-    knownKeys: null,
-    exact: false,
-  };
-}
-
-/*
- * Given a value and a KeyTrack result, either return a nice error message if it fails exactness
- * checking, or return undefined if there is no error.
- */
-export function exactError<T>(val: any, result: KeyTrack<T>): Err<T> | undefined {
-  if(!result.exact) return;
-
-  const errs = [];
-  const allowed = new Set(result.knownKeys);
-
-  for(const prop in val) {
-    if(!allowed.has(prop)) errs.push(`Unknown key ${prop} in ${val}`);
+  sliceResult(val: any): Result<L&R> {
+    const l = this.l.sliceResult(val);
+    if(l instanceof Err) return l;
+    const r = this.r.sliceResult(l);
+    if(r instanceof Err) return r;
+    return r as L&R;
   }
 
-  if(errs.length !== 0) return new Err(`${val} failed the following checks:\n${errs.join('\n')}`);
-
-  return;
+  and<T>(type: Type<T>): Type<L & R & T> {
+    return new DefaultIntersect(
+      this.l.and(type),
+      this.r.and(type),
+    );
+  }
 }

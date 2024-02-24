@@ -1,10 +1,9 @@
-import type { Comment, Either, Intersect, Validation } from "./type";
+import type { Comment, Either, DefaultIntersect, Validation } from "./type";
 import type { TypeOf } from "./checks/type-of";
 import type { InstanceOf } from "./checks/instance-of";
 import type { Value } from "./checks/value";
 import type { Arr } from "./checks/array";
-import type { Struct } from "./checks/struct";
-import type { Dict } from "./checks/dict";
+import type { Dict, Struct, MergeIntersect } from "./checks/struct";
 import type { MapType } from "./checks/map";
 import type { SetType } from "./checks/set";
 import type { Any } from "./checks/any";
@@ -18,12 +17,13 @@ export type Kind = Any
                  | MapType<any, any>
                  | Dict<any>
                  | Struct<any>
+                 | MergeIntersect<any, any, any, any>
                  | Arr<any>
                  | Value<any>
                  | InstanceOf<any>
                  | TypeOf<any>
                  | Either<any, any>
-                 | Intersect<any, any>
+                 | DefaultIntersect<any, any>
                  | Validation<any>
                  | Is<any>
                  | Comment<any>

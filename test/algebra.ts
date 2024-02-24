@@ -242,6 +242,105 @@ describe("and", () => {
     });
   });
 
+  test("preserved key slicing behavior of structs through multiple and calls", () => {
+    const a = t.subtype({ hi: t.str });
+    const b = t.subtype({ foo: t.str });
+    const c = t.subtype({ world: t.str });
+    const check = a.and(b).and(c);
+    const sliced = check.slice({
+      hi: "a",
+      foo: "b",
+      world: "c",
+      extra: "d",
+    });
+    expect(sliced).toEqual({
+      hi: "a",
+      foo: "b",
+      world: "c",
+    });
+    expect(Object.keys(sliced).sort()).toEqual([
+      "hi", "foo", "world"
+    ].sort());
+  });
+
+  test("preserved key slicing behavior of structs with dicts", () => {
+    const a = t.subtype({ hi: t.str });
+    const b = t.dict(t.str);
+    const check = a.and(b);
+    const sliced = check.slice({
+      hi: "a",
+      foo: "b",
+      world: "c",
+      extra: "d",
+    });
+    expect(sliced).toEqual({
+      hi: "a",
+      foo: "b",
+      world: "c",
+      extra: "d",
+    });
+    expect(Object.keys(sliced).sort()).toEqual([
+      "hi", "foo", "world", "extra"
+    ].sort());
+  });
+
+  test("enforces structs with dicts work", () => {
+    const a = t.subtype({ hi: t.str });
+    const b = t.dict(t.str);
+    const check = a.and(b);
+    expect(() => {
+      check.slice({
+        hi: "a",
+        foo: "b",
+        world: "c",
+        extra: 1,
+      });
+    }).toThrow();
+  });
+
+  test("merging multiple struct-dict ands works", () => {
+    const a = t.subtype({ hi: t.str }).and(t.dict(t.str));
+    const b = t.dict(t.str).and(t.subtype({ world: t.str }).and(t.dict(t.str)));
+    const check = a.and(b);
+    const sliced = check.slice({
+      hi: "1",
+      world: "2",
+      extra: "3",
+    });
+    expect(sliced).toEqual({
+      hi: "1",
+      world: "2",
+      extra: "3",
+    });
+    expect(Object.keys(sliced).sort()).toEqual([
+      "hi",
+      "world",
+      "extra",
+    ].sort());
+  });
+
+  test("slicing works when bracketed with or calls", () => {
+    const a = t.subtype({ hi: t.str });
+    const b = t.subtype({ world: t.str });
+    const c = a.and(b);
+    const d = t.subtype({ foo: t.str });
+    const e = d.or(c);
+
+    let sliced = e.slice({
+      foo: "hi"
+    });
+
+    expect(sliced).toEqual({ foo: "hi" });
+    expect(Object.keys(sliced)).toEqual([ "foo" ]);
+
+    sliced = e.slice({
+      hi: "a",
+      world: "etc",
+    });
+    expect(sliced).toEqual({ hi: "a", world: "etc" });
+    expect(Object.keys(sliced).sort()).toEqual([ "hi", "world" ].sort());
+  });
+
   test("fails on slices that fail exactness checking", () => {
     const check = t.exact({ hi: t.str }).and(t.exact({ foo: t.str }));
     expect(check.slice({
@@ -299,5 +398,35 @@ describe("and", () => {
     expect(() => {
       check.assert({});
     }).toThrow();
+  });
+
+  test("rejects values that are impossible", () => {
+    const numAndNil = t.num.and(t.nil);
+    expect(() => {
+      numAndNil.assert(1);
+    }).toThrow();
+
+    const strAndDict = t.str.and(t.dict(t.str));
+    expect(() => {
+      strAndDict.assert("");
+    }).toThrow();
+  });
+
+  test("array merges follow typescript's weird bug", () => {
+    const check = t.array(t.subtype({ hi: t.str })).and(t.array(t.subtype({ world: t.str })));
+    const sliced = check.slice([{
+      hi: "world",
+    }]);
+    type A = { hi: string };
+    type B = { world: string };
+    type C = Array<A> & Array<B>;
+    const c: C = [];
+    c.push({
+      hi: "world",
+    });
+    expect(sliced[0]).toEqual({
+      hi: "world",
+    });
+    expect(Object.keys(sliced[0])).toEqual([ "hi" ]);
   });
 });

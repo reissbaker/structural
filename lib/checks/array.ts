@@ -27,13 +27,19 @@ export class Arr<T> extends Type<Array<T>> {
 
     const result: T[] = [];
     for(const el of val) {
-      const sliced = this.elementType.slice(el);
+      const sliced = this.elementType.sliceResult(el);
       // Don't bother collecting all errors in an array: for long arrays this is very obnoxious
-      if(result instanceof Err) return new Err(result.message);
+      if(sliced instanceof Err) return new Err(sliced.message);
       result.push(sliced);
     }
 
     return result;
+  }
+
+  and<R>(t: Type<R>): Type<Array<T>&R> {
+    // Oddly, TypeScript merges arrays together by simply taking the left hand side
+    if(t instanceof Arr<any>) return this as unknown as Type<Array<T> & R>;
+    return super.and(t);
   }
 }
 
