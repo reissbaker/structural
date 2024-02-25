@@ -1,16 +1,14 @@
-import { Type, Comment, Either, Intersect, Validation } from "./type";
+import { Type, Comment, Either, DefaultIntersect, Validation } from "./type";
 import { TypeOf } from "./checks/type-of";
 import { InstanceOf } from "./checks/instance-of";
 import { Value } from "./checks/value";
 import { Arr } from "./checks/array";
-import { Struct, MissingKey, OptionalKey } from "./checks/struct";
-import { Dict } from "./checks/dict";
+import { PartialStruct, Struct, MissingKey, OptionalKey, Dict, MergeIntersect } from "./checks/struct";
 import { MapType } from "./checks/map";
 import { SetType } from "./checks/set";
 import { Any } from "./checks/any";
 import { Is } from "./checks/is";
 import { Never } from "./checks/never";
-import { PartialStruct, DeepPartial } from "./checks/partial";
 import { Kind } from "./kind";
 
 export const JSON_SCHEMA_VERSION = "https://json-schema.org/draft/2020-12/schema" as const;
@@ -103,7 +101,8 @@ function typeToSchema(type: Kind, options: Required<Options>): JSONSchema {
     };
   }
   if(type instanceof Either) return fromEither(type, options);
-  if(type instanceof Intersect) return fromIntersect(type, options);
+  if(type instanceof DefaultIntersect) return fromIntersect(type, options);
+  if(type instanceof MergeIntersect) return fromIntersect(type, options);
   if(type instanceof Validation) return fromValidation(type, options);
   if(type instanceof TypeOf) return fromTypeof(type);
   if(type instanceof InstanceOf) {
@@ -124,7 +123,6 @@ function typeToSchema(type: Kind, options: Required<Options>): JSONSchema {
   }
   if(type instanceof Is) return fromIs(type, options);
   if(type instanceof Never) return fromNever(type, options);
-  if(type instanceof DeepPartial) return fromDeepPartial(type, options);
 
   return fromPartial(type, options);
 }
@@ -164,7 +162,10 @@ function fromEither(type: Either<any, any>, options: Required<Options>): JSONSch
   };
 }
 
-function fromIntersect(type: Intersect<any, any>, options: Required<Options>): JSONSchema {
+function fromIntersect(
+  type: DefaultIntersect<any, any> | MergeIntersect<any, any, any, any>,
+  options: Required<Options>,
+): JSONSchema {
   if(type.r instanceof Validation) {
     if(options.errorOnValidations) {
       throw `Structural type contains a validation, but errorOnValidations was set to true`;
@@ -175,7 +176,10 @@ function fromIntersect(type: Intersect<any, any>, options: Required<Options>): J
     };
   }
   return {
-    allOf: flatTypes(Intersect, type).map(t => typeToSchema(t, options)),
+    allOf: flatTypes(
+      type instanceof DefaultIntersect ? DefaultIntersect : MergeIntersect,
+      type,
+    ).map(t => typeToSchema(t, options)),
   };
 }
 
@@ -267,12 +271,6 @@ function fromNever(_: Never, options: Required<Options>): JSONSchema {
   };
 }
 
-function fromDeepPartial(type: DeepPartial<any>, options: Required<Options>): JSONSchema {
-  // DeepPartial's .struct accessor is actually a rewritten struct with all keys made deeply
-  // optional
-  return fromStruct(type.struct, options);
-}
-
 function fromPartial(type: PartialStruct<any>, options: Required<Options>): JSONSchema {
   // Since Partial<T> only makes top-level keys optional, we just modify the required array
   const schema = fromStruct(type.struct, options);
@@ -281,7 +279,11 @@ function fromPartial(type: PartialStruct<any>, options: Required<Options>): JSON
 }
 
 function flatTypes(
-  klass: { new(...args: any): Either<any, any> | Intersect<any, any> },
+  klass: {
+    new(...args: any): Either<any, any>
+                     | DefaultIntersect<any, any>
+                     | MergeIntersect<any, any, any, any>
+  },
   node: Type<any>
 ): Array<Type<any>> {
   if(node instanceof klass) {

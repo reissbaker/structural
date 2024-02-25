@@ -30,9 +30,9 @@ export class MapType<K, V> extends Type<Map<K, V>> {
     const result: Map<K, V> = new Map();
 
     for(const [k, v] of val) {
-      const kResult = this.keyType.slice(k);
+      const kResult = this.keyType.sliceResult(k);
       if(kResult instanceof Err) return new Err(`{val} key error: ${kResult.message}`);
-      const vResult = this.valueType.slice(v);
+      const vResult = this.valueType.sliceResult(v);
       if(vResult instanceof Err) return new Err(`{val} value error: ${vResult.message}`);
       result.set(kResult, vResult);
     }

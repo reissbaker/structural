@@ -1,16 +1,14 @@
-import { Type, Comment, Either, Intersect, Validation } from "./type";
+import { Type, Comment, Either, DefaultIntersect, Validation } from "./type";
 import { TypeOf } from "./checks/type-of";
 import { InstanceOf } from "./checks/instance-of";
 import { Value } from "./checks/value";
 import { Arr } from "./checks/array";
-import { Struct, MissingKey, OptionalKey } from "./checks/struct";
-import { Dict } from "./checks/dict";
+import { PartialStruct, Struct, MissingKey, OptionalKey, Dict, MergeIntersect } from "./checks/struct";
 import { MapType } from "./checks/map";
 import { SetType } from "./checks/set";
 import { Any } from "./checks/any";
 import { Is } from "./checks/is";
 import { Never } from "./checks/never";
-import { PartialStruct, DeepPartial } from "./checks/partial";
 import { Kind } from "./kind";
 
 type ToTypescriptOpts = {
@@ -70,7 +68,8 @@ function toTS(type: Kind, opts: ToTypescriptOpts): string {
 
   if(type instanceof Comment) return fromComment(type, opts);
   if(type instanceof Either) return fromEither(type, opts);
-  if(type instanceof Intersect) return fromIntersect(type, opts);
+  if(type instanceof DefaultIntersect) return fromIntersect(type, opts);
+  if(type instanceof MergeIntersect) return fromIntersect(type, opts);
   if(type instanceof Validation) return fromValidation();
   if(type instanceof TypeOf) return fromTypeof(type);
   if(type instanceof InstanceOf) return fromInstanceOf(type);
@@ -83,16 +82,10 @@ function toTS(type: Kind, opts: ToTypescriptOpts): string {
   if(type instanceof Any) return fromAny();
   if(type instanceof Is) return fromIs(type);
   if(type instanceof PartialStruct) return fromPartial(type, opts);
-  if(type instanceof DeepPartial) return fromDeepPartial(type, opts);
   return fromNever(type);
 }
 
 function fromPartial(p: PartialStruct<any>, opts: ToTypescriptOpts) {
-  return `Partial<${toTS(p.struct, opts)}>`;
-}
-
-function fromDeepPartial(p: DeepPartial<any>, opts: ToTypescriptOpts) {
-  if(!p.hasNested) return `Partial<${toTS(p.ogstruct, opts)}>`;
   return `Partial<${toTS(p.struct, opts)}>`;
 }
 
@@ -132,7 +125,10 @@ function fromEither(e: Either<any, any>, opts: ToTypescriptOpts) {
 }
 
 // TODO: Should intersect strip immediate-child comments?
-function fromIntersect(i: Intersect<any, any>, opts: ToTypescriptOpts) {
+function fromIntersect(
+  i: DefaultIntersect<any, any> | MergeIntersect<any, any, any, any>,
+  opts: ToTypescriptOpts,
+) {
   // Handle validations chained with actual TS types, converting them to comments
   if(i.l instanceof Validation) return toTS(new Comment(i.l.desc, i.r), opts);
   if(i.r instanceof Validation) return toTS(new Comment(i.r.desc, i.l), opts);
@@ -242,7 +238,7 @@ function stripOuterComments(t: Kind | OptionalKey<any>): StrippedComments {
     }
   }
 
-  const algebra = [ Intersect, Either ] as const;
+  const algebra = [ DefaultIntersect, MergeIntersect, Either ] as const;
 
   for(const al of algebra) {
     if(t instanceof al) {
@@ -271,7 +267,7 @@ function handleStripAlgebra(
   desc: string,
   r: Type<any>,
   l: Type<any>,
-  constr: { new(r: Type<any>, l: Type<any>): Type<any> }
+  constr: { new(r: any, l: any): Type<any> }
 ): Type<any> {
   return new Comment(desc, new constr(r, l));
 }

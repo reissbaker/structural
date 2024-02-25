@@ -25,13 +25,11 @@ export * from "./checks/instance-of";
 export * from "./checks/value";
 export * from "./checks/array";
 export * from "./checks/struct";
-export * from "./checks/dict";
 export * from "./checks/map";
 export * from "./checks/set";
 export * from "./checks/primitives";
 export * from "./checks/any";
 export * from "./checks/is";
 export * from "./checks/never";
-export * from "./checks/partial";
 
 export * from "./kind";

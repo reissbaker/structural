@@ -41,8 +41,11 @@ test("allows type narrowing for exhaustiveness checking", () => {
     if(u instanceof t.Either) {
       return "either";
     }
-    if(u instanceof t.Intersect) {
-      return "intersect";
+    if(u instanceof t.DefaultIntersect) {
+      return "default-intersect";
+    }
+    if(u instanceof t.MergeIntersect) {
+      return "merge-intersect";
     }
     if(u instanceof t.Is) {
       return "is"
@@ -55,9 +58,6 @@ test("allows type narrowing for exhaustiveness checking", () => {
     }
     if(u instanceof t.PartialStruct) {
       return "partial";
-    }
-    if(u instanceof t.DeepPartial) {
-      return "deeppartial";
     }
 
     // This should compile even though we never ran `if(u instanceof Validation)`, because we've
