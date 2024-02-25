@@ -496,4 +496,27 @@ describe("and", () => {
       });
     }).toThrow();
   });
+
+  test("merging structs wrapped in comments works", () => {
+    const a = t.subtype({
+      hi: t.num,
+    }).comment("A hi check");
+    const b = t.subtype({
+      world: t.str,
+    }).comment("A world check");
+
+    const check = a.and(b);
+    const sliced = check.slice({
+      hi: 4,
+      world: "test",
+      extra: true,
+    });
+
+    expect(sliced).toEqual({
+      hi: 4,
+      world: "test",
+    });
+
+    expect(Object.keys(sliced).sort()).toEqual([ "hi", "world" ].sort());
+  });
 });

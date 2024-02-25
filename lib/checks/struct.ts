@@ -45,6 +45,9 @@ abstract class MergeableType<T> extends CustomCommutativeAndType<T> {
         this.and(type.r),
       );
     }
+    else if(type instanceof Comment) {
+      return new Comment(type.commentStr, this.and(type.wrapped));
+    }
     return super.and(type);
   }
 }

@@ -95,18 +95,37 @@ function assert<T>(result: Result<T>): T {
  */
 
 /*
+ * Class to extend for custom .and functions -- other classes are aware of this class and will use
+ * it as an indication to switch to the custom .and
+ */
+
+export abstract class CustomCommutativeAndType<T> extends Type<T> {
+}
+
+/*
  * ### Comment
  *
  * A type that delegates to the given type, but adds a comment when converted to TypeScript
  */
 
-export class Comment<T> extends Type<T> {
+export class Comment<T> extends CustomCommutativeAndType<T> {
   constructor(readonly commentStr: string, readonly wrapped: Type<T>) {
     super();
   }
 
   check(val: any): Result<T> {
     return this.wrapped.check(val);
+  }
+
+  sliceResult(val: any): Result<T> {
+    return this.wrapped.sliceResult(val);
+  }
+
+  and<R>(t: Type<R>): Type<T & R> {
+    return new Comment(
+      this.commentStr,
+      this.wrapped.and(t),
+    );
   }
 }
 
@@ -115,6 +134,10 @@ export class Comment<T> extends Type<T> {
  *
  * A type that runs validation functions and errors if they return false, or passes if they return
  * true.
+ *
+ * This class is the sole operator that doesn't extend CustomCommutativeAndType, since there's no
+ * way to automatically intersect validation types with anything else -- they don't wrap a real
+ * type, they wrap arbitrary functions.
  */
 
 export type Validator<T> = (val: T) => boolean;
@@ -140,13 +163,6 @@ export class Validation<T> extends Type<T> {
   }
 }
 
-/*
- * Class to extend for custom .and functions -- other classes are aware of this class and will use
- * it as an indication to switch to the custom .and
- */
-
-export abstract class CustomCommutativeAndType<T> extends Type<T> {
-}
 
 /*
  * Either
