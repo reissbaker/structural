@@ -298,11 +298,32 @@ describe("and", () => {
     }).toThrow();
   });
 
-  test("merging multiple struct-dict ands works", () => {
+  test("slicing multiple struct-dict ands works", () => {
     const a = t.subtype({ hi: t.str }).and(t.dict(t.str));
     const b = t.dict(t.str).and(t.subtype({ world: t.str }).and(t.dict(t.str)));
     const check = a.and(b);
     const sliced = check.slice({
+      hi: "1",
+      world: "2",
+      extra: "3",
+    });
+    expect(sliced).toEqual({
+      hi: "1",
+      world: "2",
+      extra: "3",
+    });
+    expect(Object.keys(sliced).sort()).toEqual([
+      "hi",
+      "world",
+      "extra",
+    ].sort());
+  });
+
+  test("checking multiple struct-dict ands works", () => {
+    const a = t.subtype({ hi: t.str }).and(t.dict(t.str));
+    const b = t.dict(t.str).and(t.subtype({ world: t.str }).and(t.dict(t.str)));
+    const check = a.and(b);
+    const sliced = check.assert({
       hi: "1",
       world: "2",
       extra: "3",
@@ -428,5 +449,51 @@ describe("and", () => {
       hi: "world",
     });
     expect(Object.keys(sliced[0])).toEqual([ "hi" ]);
+  });
+
+  test("partial merges slices work", () => {
+    const check = t.subtype({
+      hi: t.str,
+    }).and(t.partial(t.subtype({
+      world: t.num,
+    })));
+
+    let sliced = check.slice({
+      hi: "there",
+    });
+
+    expect(sliced).toEqual({ hi: "there" });
+    expect(Object.keys(sliced)).toEqual([ "hi" ]);
+
+    sliced = check.slice({
+      hi: "there",
+      world: 5,
+    });
+
+    expect(sliced).toEqual({
+      hi: "there",
+      world: 5,
+    });
+    expect(Object.keys(sliced).sort()).toEqual([ "hi", "world" ].sort());
+  });
+
+  test("merging dicts of same key works", () => {
+    const check = t.dict(t.num).and(t.dict(t.num));
+    check.assert({
+      hi: 1,
+      world: 2,
+      hooray: 4,
+    });
+  });
+
+  test("merging dicts of same key explodes on any value", () => {
+    const check = t.dict(t.num).and(t.dict(t.str));
+    expect(() => {
+      check.assert({
+        hi: 1,
+        world: 2,
+        hooray: 4,
+      });
+    }).toThrow();
   });
 });

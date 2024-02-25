@@ -31,6 +31,5 @@ export * from "./checks/primitives";
 export * from "./checks/any";
 export * from "./checks/is";
 export * from "./checks/never";
-export * from "./checks/partial";
 
 export * from "./kind";

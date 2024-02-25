@@ -3,13 +3,12 @@ import { TypeOf } from "./checks/type-of";
 import { InstanceOf } from "./checks/instance-of";
 import { Value } from "./checks/value";
 import { Arr } from "./checks/array";
-import { Struct, MissingKey, OptionalKey, Dict, MergeIntersect } from "./checks/struct";
+import { PartialStruct, Struct, MissingKey, OptionalKey, Dict, MergeIntersect } from "./checks/struct";
 import { MapType } from "./checks/map";
 import { SetType } from "./checks/set";
 import { Any } from "./checks/any";
 import { Is } from "./checks/is";
 import { Never } from "./checks/never";
-import { PartialStruct } from "./checks/partial";
 import { Kind } from "./kind";
 
 export const JSON_SCHEMA_VERSION = "https://json-schema.org/draft/2020-12/schema" as const;

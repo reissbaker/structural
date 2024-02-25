@@ -3,13 +3,12 @@ import type { TypeOf } from "./checks/type-of";
 import type { InstanceOf } from "./checks/instance-of";
 import type { Value } from "./checks/value";
 import type { Arr } from "./checks/array";
-import type { Dict, Struct, MergeIntersect } from "./checks/struct";
+import type { Dict, Struct, PartialStruct, MergeIntersect } from "./checks/struct";
 import type { MapType } from "./checks/map";
 import type { SetType } from "./checks/set";
 import type { Any } from "./checks/any";
 import type { Is } from "./checks/is";
 import type { Never } from "./checks/never";
-import type { PartialStruct } from "./checks/partial";
 
 export type Kind = Any
                  | Never

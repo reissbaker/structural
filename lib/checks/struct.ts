@@ -1,5 +1,5 @@
 import { Err, Result } from "../result";
-import { Type, CustomCommutativeAndType, Either, DefaultIntersect } from "../type";
+import { Type, CustomCommutativeAndType, Either, DefaultIntersect, Comment } from "../type";
 import { GetType } from "../get-type";
 
 /*
@@ -235,6 +235,85 @@ export function allowMissing<T extends Type<any>>(check: T): MissingKey<T> {
   return new MissingKey(check);
 }
 
+type MakeOptional<T extends FieldDef> = T extends Type<any> ? OptionalKey<T> :
+  T extends MissingKey<infer K> ? OptionalKey<K> : T;
+
+type DeepPartialTypeStruct<T extends TypeStruct> = {
+  [K in keyof T]: T[K] extends Struct<infer T2> ? OptionalKey<Struct<DeepPartialTypeStruct<T2>>> :
+    MakeOptional<T[K]>
+}
+
+type PartialTypeStruct<T extends TypeStruct> = {
+  [K in keyof T]: MakeOptional<T[K]>
+};
+
+export class PartialStruct<T extends TypeStruct> extends MergeableType<UnwrappedTypeStruct<PartialTypeStruct<T>>> {
+  private readonly hiddenStruct: Struct<PartialTypeStruct<T>>;
+  private readonly hiddenTypeStruct: PartialTypeStruct<T>;
+  constructor(readonly struct: Struct<T>) {
+    super();
+    const partialDef: Partial<PartialTypeStruct<T>> = {};
+    for(const k in struct.definition) {
+      const v = struct.definition[k];
+      if(v instanceof MissingKey) {
+        //@ts-ignore
+        partialDef[k] = optional(v.type);
+      }
+      else if(v instanceof OptionalKey) {
+        //@ts-ignore
+        partialDef[k] = optional(v.type);
+      }
+      else {
+        //@ts-ignore
+        partialDef[k] = optional(v);
+      }
+    }
+    this.hiddenTypeStruct = partialDef as PartialTypeStruct<T>;
+    this.hiddenStruct = new Struct(this.hiddenTypeStruct, struct.exact);
+  }
+  check(val: any): Result<UnwrappedTypeStruct<PartialTypeStruct<T>>> {
+    return this.hiddenStruct.check(val);
+  }
+  sliceResult(val: any): Result<UnwrappedTypeStruct<PartialTypeStruct<T>>> {
+    return this.hiddenStruct.sliceResult(val);
+  }
+
+  reify(): Struct<PartialTypeStruct<T>> {
+    return new Struct(this.hiddenTypeStruct, this.hiddenStruct.exact);
+  }
+}
+
+
+export function deepPartial<T extends TypeStruct>(ogstruct: Struct<T>): PartialStruct<DeepPartialTypeStruct<T>> {
+  // If the original struct isn't nested, it's just an ordinary partial call. Don't modify the
+  // definition, or else when you convert to TypeScript it won't correctly ref out the struct
+  if(!hasNested(ogstruct)) {
+    // @ts-ignore
+    return partial(ogstruct);
+  }
+
+  // If we got this far, the struct has nesting, and therefore can't simply be ref-ed out when
+  // converting to TypeScript. We must modify it recursively.
+  const partialDef: Partial<DeepPartialTypeStruct<T>> = {};
+  for(const k in ogstruct.definition) {
+    const v = ogstruct.definition[k];
+    if(v instanceof MissingKey) {
+      //@ts-ignore
+      partialDef[k] = new MissingKey(v.type);
+    }
+    else if(v instanceof OptionalKey) {
+      //@ts-ignore
+      partialDef[k] = optional(v.type);
+    }
+    else {
+      const deepKind = deepPartialKind(v);
+      // @ts-ignore
+      partialDef[k] = deepKind;
+    }
+  }
+  const struct = new Struct(partialDef as DeepPartialTypeStruct<T>, ogstruct.exact);
+  return new PartialStruct(struct);
+}
 
 export class MergeIntersect<
   LVal, RVal,
@@ -276,33 +355,52 @@ export class MergeIntersect<
     d: Dict<any>,
     m: MergeableType<any> | InternalDictStructMerge<any, any, any, any>
   ): MergeableType<any> | InternalDictStructMerge<any, any, any, any> {
-    if(m instanceof Dict) return this.mergeDicts(d, m);
-    if(m instanceof Struct) return this.mergeDictAndStruct(d, m);
-    if(m instanceof MergeIntersect) return this.mergeDictAndMergeable(d, m.merged);
-    if(m instanceof InternalDictStructMerge) return this.mergeInternalAndDict(m, d);
-    throw `Unknown type for ${m}`;
+    return merge(m, {
+      dict: (m) => this.mergeDicts(d, m),
+      partial: (m) => new InternalDictStructMerge(m.reify(), d),
+      struct: (m) => this.mergeDictAndStruct(d, m),
+      merge: (m) => this.mergeDictAndMergeable(d, m.merged),
+      internal: (m) => this.mergeInternalAndDict(m, d),
+    });
   }
 
   private mergeStructAndMergeable(
     s: Struct<any>,
     m: MergeableType<any> | InternalDictStructMerge<any, any, any, any>
   ): MergeableType<any> | InternalDictStructMerge<any, any, any, any> {
-    if(m instanceof Dict) return this.mergeDictAndStruct(m, s);
-    if(m instanceof Struct) return this.mergeStructs(s, m);
-    if(m instanceof MergeIntersect) return this.mergeStructAndMergeable(s, m.merged);
-    if(m instanceof InternalDictStructMerge) return this.mergeInternalAndStruct(m, s);
-    throw `Unknown type for ${m}`;
+    return merge(m, {
+      dict: m => this.mergeDictAndStruct(m, s),
+      partial: m => this.mergeStructs(s, m.reify()),
+      struct: m => this.mergeStructs(s, m),
+      merge: m => this.mergeStructAndMergeable(s, m.merged),
+      internal: m => this.mergeInternalAndStruct(m, s),
+    });
+  }
+
+  private mergePartialAndMergeable(
+    p: PartialStruct<any>,
+    m: MergeableType<any> | InternalDictStructMerge<any, any, any, any>,
+  ): MergeableType<any> | InternalDictStructMerge<any, any, any, any> {
+    return merge(m, {
+      dict: m => new InternalDictStructMerge(p.reify(), m),
+      partial: m => this.mergeStructs(p.reify(), m.reify()),
+      struct: m => this.mergeStructs(p.reify(), m),
+      merge: m => this.mergePartialAndMergeable(p, m.merged),
+      internal: m => this.mergeInternalAndStruct(m, p.reify()),
+    });
   }
 
   private mergeIntersectAndMergeable(
     i: MergeIntersect<any, any, any, any>,
     m: MergeableType<any> | InternalDictStructMerge<any, any, any, any>
   ): MergeableType<any> | InternalDictStructMerge<any, any, any, any> {
-    if(m instanceof Dict) return this.mergeDictAndMergeable(m, i.merged);
-    if(m instanceof Struct) return this.mergeStructAndMergeable(m, i.merged);
-    if(m instanceof MergeIntersect) return this.mergeIntersectAndMergeable(m, i.merged);
-    if(m instanceof InternalDictStructMerge) return this.mergeInternalAndIntersect(m, i);
-    throw `Unknown type for ${m}`;
+    return merge(m, {
+      dict: m => this.mergeDictAndMergeable(m, i.merged),
+      partial: m => this.mergePartialAndMergeable(m, i.merged),
+      struct: m => this.mergeStructAndMergeable(m, i.merged),
+      merge: m => this.mergeIntersectAndMergeable(m, i.merged),
+      internal: m => this.mergeInternalAndIntersect(m, i),
+    });
   }
 
   private mergeInternalAndDict(l: InternalDictStructMerge<any, any, any, any>, r: Dict<any>) {
@@ -316,12 +414,16 @@ export class MergeIntersect<
   private mergeInternalAndIntersect(
     l: InternalDictStructMerge<any, any, any, any>,
     r: MergeIntersect<any, any, any, any>
-  ) {
-    const merged = r.merged;
-    if(merged instanceof Dict) return this.mergeInternalAndDict(l, merged);
-    if(merged instanceof Struct) return this.mergeInternalAndStruct(l, merged);
-    if(merged instanceof InternalDictStructMerge) return this.mergeInternalAndInternal(l, merged);
-    throw `Unknown type for ${merged}`;
+  ): MergeableType<any> | InternalDictStructMerge<any, any, any, any> {
+    return merge(r.merged, {
+      dict: merged => this.mergeInternalAndDict(l, merged),
+      partial: merged => this.mergeInternalAndStruct(l, merged.reify()),
+      struct: merged => this.mergeInternalAndStruct(l, merged),
+      merge: () => {
+        throw `MergeIntersect can't be a child of a MergeIntersect; structural internal error`
+      },
+      internal: merged => this.mergeInternalAndInternal(l, merged),
+    });
   }
 
   private mergeInternalAndInternal(
@@ -342,7 +444,7 @@ export class MergeIntersect<
     return new InternalDictStructMerge(r, l);
   }
 
-  private mergeStructs(l: StructFor<L>, r: StructFor<R>) {
+  private mergeStructs(l: Struct<any>, r: Struct<any>) {
     const definition: { [key: string]: FieldDef } = {};
 
     for(const prop in l.definition) {
@@ -395,6 +497,26 @@ export class MergeIntersect<
   }
 }
 
+type MergeHandlers = {
+    dict: (d: Dict<any>) => MergeResult,
+    partial: (p: PartialStruct<any>) => MergeResult,
+    struct: (s: Struct<any>) => MergeResult,
+    merge: (m: MergeIntersect<any, any, any, any>) => MergeResult,
+    internal: (i: InternalDictStructMerge<any, any, any, any>) => MergeResult,
+};
+type MergeResult = MergeableType<any> | InternalDictStructMerge<any, any, any, any>;
+function merge<Input extends MergeableType<any>>(
+  i: Input,
+  handlers: MergeHandlers,
+): MergeResult {
+  if(i instanceof Dict) return handlers.dict(i);
+  if(i instanceof PartialStruct) return handlers.partial(i);
+  if(i instanceof Struct) return handlers.struct(i);
+  if(i instanceof MergeIntersect) return handlers.merge(i);
+  if(i instanceof InternalDictStructMerge) return handlers.internal(i);
+  throw `Unknown type ${i}`;
+}
+
 class InternalDictStructMerge<
   SVal extends TypeStruct, DVal,
   S extends Struct<SVal>,
@@ -420,4 +542,51 @@ class InternalDictStructMerge<
     const sResult = this.s.sliceResult(val);
     return Object.assign({}, dResult, sResult) as GetType<S> & GetType<D>;
   }
+}
+
+export const Nested = [
+  Struct,
+  PartialStruct,
+  Dict,
+  Either,
+  DefaultIntersect,
+  MergeIntersect,
+  Comment,
+] as const;
+export type NestedType = InstanceType<(typeof Nested)[number]>;
+
+function deepPartialKind(kind: Type<any>): Type<any> {
+  if(isNested(kind)) return handleNested(kind);
+  return kind;
+}
+
+function handleNested(kind: NestedType): Type<any> {
+  if(kind instanceof Struct) {
+    if(hasNested(kind)) return deepPartial(kind);
+    return new PartialStruct(kind);
+  }
+  if(kind instanceof PartialStruct) return deepPartial(kind.struct);
+  if(kind instanceof Comment) return new Comment(kind.commentStr, deepPartialKind(kind.wrapped));
+  if(kind instanceof Dict) return new Dict(deepPartialKind(kind.valueType), kind.namedKey);
+  if(kind instanceof Either) return new Either(deepPartialKind(kind.l), deepPartialKind(kind.r));
+  if(kind instanceof MergeIntersect) return new DefaultIntersect(deepPartialKind(kind.l), deepPartialKind(kind.r));
+  return new DefaultIntersect(deepPartialKind(kind.l), deepPartialKind(kind.r));
+}
+
+function isNested(kind: Type<any> | NestedType): kind is NestedType {
+  for(const t of Nested) {
+    if(kind instanceof t) return true;
+  }
+  return false;
+}
+
+function hasNested(struct: Struct<any>) {
+  for(const k in struct.definition) {
+    if(isNested(struct.definition[k])) return true;
+  }
+  return false;
+}
+
+export function partial<T extends TypeStruct>(struct: Struct<T>): PartialStruct<T> {
+  return new PartialStruct(struct);
 }
