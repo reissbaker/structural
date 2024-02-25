@@ -38,7 +38,7 @@ export class Arr<T> extends Type<Array<T>> {
 
   and<R>(t: Type<R>): Type<Array<T>&R> {
     // Oddly, TypeScript merges arrays together by simply taking the left hand side
-    if(t instanceof Arr<any>) return this as unknown as Type<Array<T> & R>;
+    if(t instanceof Arr) return this as unknown as Type<Array<T> & R>;
     return super.and(t);
   }
 }
