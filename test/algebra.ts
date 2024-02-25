@@ -519,4 +519,25 @@ describe("and", () => {
 
     expect(Object.keys(sliced).sort()).toEqual([ "hi", "world" ].sort());
   });
+
+  test("merging nested partials and non-partials", () => {
+    const combat = t.value("dps").comment("damage-focused");
+    const chardata = t.subtype({
+      mainRole: combat,
+    });
+    const mergedchar = t.subtype({
+      charData: t.partial(chardata).and(chardata),
+    });
+    const sliced = mergedchar.slice({
+      charData: {
+        mainRole: 'dps',
+        extra: 'hello',
+      },
+    });
+    expect(sliced).toEqual({
+      charData: {
+        mainRole: 'dps',
+      },
+    });
+  });
 });
