@@ -334,16 +334,15 @@ export class MergeIntersect<
   constructor(readonly l: L, readonly r: R) {
     super();
 
-    if(l instanceof Dict) {
-      this.merged = this.mergeDictAndMergeable(l, r);
-    }
-    else if(l instanceof Struct) {
-      this.merged = this.mergeStructAndMergeable(l, r);
-    }
-    else {
-      // @ts-ignore
-      this.merged = this.mergeIntersectAndMergeable(l, r);
-    }
+    this.merged = merge(l, {
+      dict: l => this.mergeDictAndMergeable(l, r),
+      struct: l => this.mergeStructAndMergeable(l, r),
+      partial: l => this.mergeStructAndMergeable(l.reify(), r),
+      merge: l => this.mergeIntersectAndMergeable(l, r),
+      internal: () => {
+        throw `leaked internal dict/struct merge class; structural error`;
+      },
+    });
   }
 
   check(val: any) {
