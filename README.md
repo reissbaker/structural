@@ -190,6 +190,75 @@ JSON Schema from Structural types in a single line of code:
 toJSONSchema("User schema", User)
 ```
 
+## Basic types
+
+* `t.any`: corresponds to `any`
+* `t.array(...)`: correspond to `Array<...>`
+* `t.instanceOf(...)`: corresponds to an `instanceof` check
+* `t.is(name, guard)`: corresponds to a guard function; e.g. `t.is("bird", function
+  isBird(val: any): is Bird { ... })` would result in a Structural type that
+  runs the `isBird` function to determine whether a value is a `Bird`.
+* `t.map(key, value)` corresponds to `Map<Key, Value>`
+* `t.never` corresponds to `never`
+* `t.num` corresponds to `number`
+* `t.str` corresponds to `string`
+* `t.bool` corresponds to `boolean`
+* `t.fn` corresponds to `Function`
+* `t.sym` corresponds to `Symbol`
+* `t.undef` corresponds to `undefined`
+* `t.nil` corresponds to `null`
+* `t.obj` corresponds to `Object`
+* `t.maybe(type)` corresponds to `type | null`
+* `t.set(value)` corresponds to `Set<Value>`
+* `t.value(literal)` corresponds to literal type values, e.g. `type Hello =
+  "hello"` would be written as `t.value("hello")`
+
+## Subtypes and exact types
+
+Subtypes and exact types are how Structural implements structural types:
+`t.subtype` defines a subtype, i.e. anything that has *at least* the keys
+passes, whereas `t.exact` defines an exact type, i.e. the keys must exactly
+match and unknown keys aren't allowed. They use the same syntax:
+
+```typescript
+const UserSubtype = t.subtype({
+  id: t.str,
+  purchaseCount: t.num,
+});
+
+// Passes:
+UserSubtype.assert({
+  id: "123",
+  purchaseCount: 0,
+});
+
+// Passes:
+UserSubtype.assert({
+  id: "123",
+  purchaseCount: 0,
+  name: "Bobby",
+});
+
+
+const UserExact = t.exact({
+  id: t.str,
+  purchaseCount: t.num,
+});
+
+// Passes:
+UserExact.assert({
+  id: "123",
+  purchaseCount: 0,
+});
+
+// Fails:
+UserExact.assert({
+  id: "123",
+  purchaseCount: 0,
+  name: "Bobby",
+});
+```
+
 ## Advanced type system features
 
 Here's a more advanced example, showing how to compose types using type algebra
@@ -617,7 +686,7 @@ The `assignToType` option auto-generates the syntax to assign a type a name,
 and inserting a semicolon after the type definition. For example:
 
 ```typescript
-const ts = toTypescript(t.either(t.num, t.str), {
+const ts = toTypescript(t.num.or(t.str), {
   assignToType: "id",
 });
 ```
