@@ -27,6 +27,17 @@ describe("num", () => {
   });
 });
 
+describe("bigint", () => {
+  test("converts to typescript", () => {
+    expect(t.toTypescript(t.bigint)).toEqual("bigint");
+  });
+  test("can't convert to JSON Schema", () => {
+    expect(() => {
+      t.toJSONSchema("no", t.bigint);
+    }).toThrow();
+  });
+});
+
 describe("str", () => {
   test("converts to typescript", () => {
     expect(t.toTypescript(t.str)).toEqual("string");

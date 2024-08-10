@@ -201,6 +201,7 @@ toJSONSchema("User schema", User)
 * `t.map(key, value)` corresponds to `Map<Key, Value>`
 * `t.never` corresponds to `never`
 * `t.num` corresponds to `number`
+* `t.bigint` corresponds to `bigint`
 * `t.str` corresponds to `string`
 * `t.bool` corresponds to `boolean`
 * `t.fn` corresponds to `Function`

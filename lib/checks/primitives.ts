@@ -3,6 +3,7 @@ import { typeOf } from "./type-of";
 import { value } from "./value";
 
 export const num = typeOf<number>('number');
+export const bigint = typeOf<bigint>('bigint');
 export const str = typeOf<string>('string');
 export const bool = typeOf<boolean>('boolean');
 export const fn = typeOf<Function>('function');
