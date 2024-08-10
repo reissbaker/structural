@@ -1,3 +1,10 @@
+export class TypeError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = this.constructor.name;
+  }
+}
+
 export class Err<_> {
   message: string;
   constructor(str: string) {
@@ -5,7 +12,7 @@ export class Err<_> {
   }
 
   toError() {
-    return new Error(this.message);
+    return new TypeError(this.message);
   }
 }
 
