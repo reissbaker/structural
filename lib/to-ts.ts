@@ -153,10 +153,10 @@ function fromTypeof(t: TypeOf<any>): string {
     case "object": return "Object";
     case "boolean": return t.typestring;
     case "number": return t.typestring;
-    case "bigint": return "BigInt";
     case "string": return t.typestring;
     case "symbol": return "Symbol";
     case "function": return "Function";
+    case "bigint": return "bigint";
   }
 }
 
