@@ -99,7 +99,7 @@ test("kind example", () => {
        .when(t.instanceOf(t.TypeOf), ignore)
        .when(t.instanceOf(t.Either), v => { recur(v.l); recur(v.r) })
        .when(t.instanceOf(t.Intersection), v => v.operands.forEach(recur))
-       .when(t.instanceOf(t.MergeIntersect), v => { recur(v.l); recur(v.r) })
+       .when(t.instanceOf(t.MergeIntersect), v => v.operands.forEach(recur))
        .when(t.instanceOf(t.Validation), ignore)
        .when(t.instanceOf(t.Is), ignore)
        .when(t.instanceOf(t.Comment), v => recur(v.wrapped))

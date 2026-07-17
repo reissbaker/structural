@@ -133,6 +133,67 @@ describe("opaque intersection projections", () => {
   });
 });
 
+describe("object intersection projections", () => {
+  test("dictionary constraints apply to present optional struct fields", () => {
+    const optionalStruct = t.subtype({
+      known: t.optional(t.str),
+    });
+
+    for(const type of [
+      optionalStruct.and(t.dict(t.str)),
+      t.dict(t.str).and(optionalStruct),
+    ]) {
+      expectAcceptedByCheckAndSlice(type, {});
+      expectAcceptedByCheckAndSlice(type, { known: "hello" });
+      expectRejectedByCheckAndSlice(type, { known: undefined });
+    }
+  });
+
+  test("normalizes grouped dictionary and struct constraints", () => {
+    const aDict = t.dict(a);
+    const bDict = t.dict(b);
+    const knownC = t.subtype({ known: c });
+    const input = {
+      known: { a: "hello", b: 1, c: true, extra: "sliced" },
+      unknown: { a: "world", b: 2, extra: "sliced" },
+    };
+    const expected = {
+      known: { a: "hello", b: 1, c: true },
+      unknown: { a: "world", b: 2 },
+    };
+
+    for(const type of [
+      aDict.and(bDict).and(knownC),
+      aDict.and(bDict.and(knownC)),
+    ]) {
+      expectAcceptedByCheckAndSlice(type, input);
+      expect(type.slice(input)).toEqual(expected);
+      expectRejectedByCheckAndSlice(type, {
+        known: { a: "hello", b: 1, c: true },
+        unknown: { a: "world" },
+      });
+    }
+  });
+
+  test("dictionary constraints project named struct fields in either operand order", () => {
+    const input = {
+      known: { a: "hello", b: 1, extra: "sliced" },
+      unknown: { a: "world", extra: "sliced" },
+    };
+    const expected = {
+      known: { a: "hello", b: 1 },
+      unknown: { a: "world" },
+    };
+
+    for(const type of [
+      t.dict(a).and(t.subtype({ known: b })),
+      t.subtype({ known: b }).and(t.dict(a)),
+    ]) {
+      expect(type.slice(input)).toEqual(expected);
+    }
+  });
+});
+
 describe("container intersection projections", () => {
   test("arrays merge child projectors in either operand order", () => {
     const input = [{ a: "hello", b: 1, extra: "sliced" }];

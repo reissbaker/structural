@@ -138,10 +138,10 @@ function fromIntersection(i: Intersection<any>, opts: ToTypescriptOpts) {
 }
 
 function fromMergeIntersect(
-  i: MergeIntersect<any, any, any, any>,
+  i: MergeIntersect<any>,
   opts: ToTypescriptOpts,
 ) {
-  return renderIntersection([ i.l, i.r ], opts);
+  return renderIntersection(i.operands, opts);
 }
 
 function renderIntersection(operands: ReadonlyArray<Type<any>>, opts: ToTypescriptOpts) {

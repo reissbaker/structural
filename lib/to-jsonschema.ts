@@ -187,11 +187,11 @@ function fromIntersection(
 }
 
 function fromMergeIntersect(
-  type: MergeIntersect<any, any, any, any>,
+  type: MergeIntersect<any>,
   options: Required<Options>,
 ): JSONSchema {
   return {
-    allOf: flatTypes(MergeIntersect, type).map(t => typeToSchema(t, options)),
+    allOf: type.operands.map(operand => typeToSchema(operand, options)),
   };
 }
 
@@ -293,10 +293,7 @@ function fromPartial(type: PartialStruct<any>, options: Required<Options>): JSON
 }
 
 function flatTypes(
-  klass: {
-    new(...args: any): Either<any, any>
-                     | MergeIntersect<any, any, any, any>
-  },
+  klass: { new(...args: any): Either<any, any> },
   node: Type<any>
 ): Array<Type<any>> {
   if(node instanceof klass) {
