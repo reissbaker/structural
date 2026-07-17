@@ -43,6 +43,7 @@ export type JSONSchema = Annotated<{ type: "string" }>
                          properties: {
                            [key: string]: JSONSchema,
                          },
+                         additionalProperties?: false,
                        }>
                        | Annotated<{
                          type: "object",
@@ -237,10 +238,12 @@ function fromStruct(type: Struct<any>, options: Required<Options>): JSONSchema {
     }
   }
 
-  return {
+  const schema: JSONSchema = {
     type: 'object',
     required, properties,
   };
+  if(type.exact) schema.additionalProperties = false;
+  return schema;
 }
 
 function fromDict(type: Dict<any>, options: Required<Options>): JSONSchema {
