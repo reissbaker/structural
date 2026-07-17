@@ -1,7 +1,7 @@
 import { Result } from "../result";
-import { Type } from "../type";
+import { ConstraintType } from "../type";
 
-export class Any extends Type<any> {
+export class Any extends ConstraintType<any> {
   check(val: any): Result<any> {
     return val;
   }

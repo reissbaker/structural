@@ -1,3 +1,4 @@
+import { expect, test } from "vitest";
 import * as t from "..";
 
 test("allows type narrowing for exhaustiveness checking", () => {
@@ -41,8 +42,8 @@ test("allows type narrowing for exhaustiveness checking", () => {
     if(u instanceof t.Either) {
       return "either";
     }
-    if(u instanceof t.DefaultIntersect) {
-      return "default-intersect";
+    if(u instanceof t.Intersection) {
+      return "intersection";
     }
     if(u instanceof t.MergeIntersect) {
       return "merge-intersect";

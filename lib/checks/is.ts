@@ -1,9 +1,9 @@
 import { Err, Result } from "../result";
-import { Type } from "../type";
+import { OpaqueType } from "../type";
 
 type Guard<T> = (val: any) => val is T
 
-export class Is<T> extends Type<T> {
+export class Is<T> extends OpaqueType<T> {
   readonly name: string
   readonly isT: Guard<T>
 

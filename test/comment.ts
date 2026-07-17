@@ -1,3 +1,4 @@
+import { expect, test } from "vitest";
 import * as t from "..";
 
 test("comments delegate checking to their wrapped values", () => {

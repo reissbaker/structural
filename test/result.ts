@@ -1,3 +1,4 @@
+import { expect, test } from "vitest";
 import * as t from "..";
 
 test(".toError converts to a special TypeError type", () => {

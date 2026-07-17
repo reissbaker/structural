@@ -1,10 +1,12 @@
 import { Err, Result } from "../result";
-import { Type } from "../type";
+import { asKind } from "../as-kind";
+import { TypedKind } from "../kind";
+import { Projection, TypeImpl } from "../type";
 
-export class Arr<T> extends Type<Array<T>> {
-  readonly elementType: Type<T>;
+export class Arr<T> extends TypeImpl<Array<T>> {
+  readonly elementType: TypedKind<T>;
 
-  constructor(t: Type<T>) {
+  constructor(t: TypedKind<T>) {
     super();
     this.elementType = t;
   }
@@ -22,27 +24,25 @@ export class Arr<T> extends Type<Array<T>> {
     return val as Array<T>;
   }
 
-  sliceResult(val: any): Result<Array<T>> {
-    if(!Array.isArray(val)) return new Err(`${val} is not an array`);
+  protected merge<R>(type: TypedKind<R>): TypedKind<Array<T> & R> | undefined {
+    if(!(type instanceof Arr)) return undefined;
 
-    const result: T[] = [];
-    for(const el of val) {
-      const sliced = this.elementType.sliceResult(el);
-      // Don't bother collecting all errors in an array: for long arrays this is very obnoxious
-      if(sliced instanceof Err) return new Err(sliced.message);
-      result.push(sliced);
-    }
-
-    return result;
+    return asKind<Array<T> & R>(new Arr(
+      this.elementType.and(type.elementType),
+    ));
   }
 
-  and<R>(t: Type<R>): Type<Array<T>&R> {
-    // Oddly, TypeScript merges arrays together by simply taking the left hand side
-    if(t instanceof Arr) return this as unknown as Type<Array<T> & R>;
-    return super.and(t);
+  protected project(val: any): Projection<Array<T>> {
+    return {
+      kind: "structural",
+      value: val.map((element: any) => {
+        const projection = this.projectionOf(this.elementType, element);
+        return projection.kind === "none" ? element : projection.value;
+      }),
+    };
   }
 }
 
-export function array<T>(t: Type<T>): Arr<T> {
+export function array<T>(t: TypedKind<T>): Arr<T> {
   return new Arr(t);
 }

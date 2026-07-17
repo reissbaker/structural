@@ -1,3 +1,4 @@
+import { describe, expect, test } from "vitest";
 import * as t from ".."
 
 describe(t.CaseSwitch, () => {
@@ -66,10 +67,12 @@ test("exhaustiveness example with t.Kind", () => {
        .when(t.instanceOf(t.InstanceOf), () => 'instanceof')
        .when(t.instanceOf(t.TypeOf), () => 'typeof')
        .when(t.instanceOf(t.Either), () => 'either')
-       .when(t.instanceOf(t.DefaultIntersect), () => 'default-intersect')
+       .when(t.instanceOf(t.Intersection), () => 'intersection')
        .when(t.instanceOf(t.MergeIntersect), () => 'merge-intersect')
        .when(t.instanceOf(t.Validation), () => 'validation')
-       .when(t.instanceOf(t.Is), () => 'is'))
+       .when(t.instanceOf(t.Is), () => 'is')
+       .when(t.instanceOf(t.Comment), () => 'comment')
+       .when(t.instanceOf(t.PartialStruct), () => 'partial'))
 
   expect(fn(t.any)).toBe('any')
   expect(fn(t.value(1).or(t.value('two')))).toBe('either')
@@ -95,10 +98,12 @@ test("kind example", () => {
        .when(t.instanceOf(t.InstanceOf), ignore)
        .when(t.instanceOf(t.TypeOf), ignore)
        .when(t.instanceOf(t.Either), v => { recur(v.l); recur(v.r) })
-       .when(t.instanceOf(t.DefaultIntersect), v => { recur(v.l); recur(v.r) })
+       .when(t.instanceOf(t.Intersection), v => v.operands.forEach(recur))
        .when(t.instanceOf(t.MergeIntersect), v => { recur(v.l); recur(v.r) })
        .when(t.instanceOf(t.Validation), ignore)
        .when(t.instanceOf(t.Is), ignore)
+       .when(t.instanceOf(t.Comment), v => recur(v.wrapped))
+       .when(t.instanceOf(t.PartialStruct), v => recur(v.struct))
     )
     post(type)
   }

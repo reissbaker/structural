@@ -1,3 +1,4 @@
+import { describe, expect, test } from "vitest";
 import * as t from "..";
 
 describe("or", () => {
@@ -433,22 +434,24 @@ describe("and", () => {
     }).toThrow();
   });
 
-  test("array merges follow typescript's weird bug", () => {
+  test("array intersections project TypeScript 7 indexed element keys", () => {
     const check = t.array(t.subtype({ hi: t.str })).and(t.array(t.subtype({ world: t.str })));
     const sliced = check.slice([{
-      hi: "world",
+      hi: "hello",
+      world: "world",
+      extra: "sliced",
     }]);
+
     type A = { hi: string };
     type B = { world: string };
-    type C = Array<A> & Array<B>;
-    const c: C = [];
-    c.push({
-      hi: "world",
+    const typed: Array<A> & Array<B> = sliced;
+    const element: A & B = typed[0];
+
+    expect(element).toEqual({
+      hi: "hello",
+      world: "world",
     });
-    expect(sliced[0]).toEqual({
-      hi: "world",
-    });
-    expect(Object.keys(sliced[0])).toEqual([ "hi" ]);
+    expect(Object.keys(element).sort()).toEqual([ "hi", "world" ].sort());
   });
 
   test("partial merges slices work", () => {

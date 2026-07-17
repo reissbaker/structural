@@ -1,9 +1,9 @@
 import { Err, Result } from "../result";
-import { Type } from "../type";
+import { OpaqueType } from "../type";
 
 export type Constructor<T> = Function & { prototype: T }
 
-export class InstanceOf<T> extends Type<T> {
+export class InstanceOf<T> extends OpaqueType<T> {
   readonly klass: Constructor<T>;
 
   constructor(klass: Constructor<T>) {

@@ -1,4 +1,4 @@
-import { Type, Comment, Either, DefaultIntersect, Validation } from "./type";
+import { Type, Comment, Either, Intersection, Validation } from "./type";
 import { TypeOf } from "./checks/type-of";
 import { InstanceOf } from "./checks/instance-of";
 import { Value } from "./checks/value";
@@ -94,7 +94,7 @@ export function toJSONSchema(title: string, type: Kind, opts?: Options): TopLeve
   return addMetadata(title, typeToSchema(type, options));
 }
 
-function typeToSchema(type: Kind, options: Required<Options>): JSONSchema {
+function typeToSchema(type: Type<any>, options: Required<Options>): JSONSchema {
   if(type instanceof Comment) {
     return {
       description: formatCommentString(type.commentStr),
@@ -102,8 +102,8 @@ function typeToSchema(type: Kind, options: Required<Options>): JSONSchema {
     };
   }
   if(type instanceof Either) return fromEither(type, options);
-  if(type instanceof DefaultIntersect) return fromIntersect(type, options);
-  if(type instanceof MergeIntersect) return fromIntersect(type, options);
+  if(type instanceof Intersection) return fromIntersection(type, options);
+  if(type instanceof MergeIntersect) return fromMergeIntersect(type, options);
   if(type instanceof Validation) return fromValidation(type, options);
   if(type instanceof TypeOf) return fromTypeof(type);
   if(type instanceof InstanceOf) {
@@ -163,24 +163,35 @@ function fromEither(type: Either<any, any>, options: Required<Options>): JSONSch
   };
 }
 
-function fromIntersect(
-  type: DefaultIntersect<any, any> | MergeIntersect<any, any, any, any>,
+function fromIntersection(
+  type: Intersection<any>,
   options: Required<Options>,
 ): JSONSchema {
-  if(type.r instanceof Validation) {
-    if(options.errorOnValidations) {
-      throw `Structural type contains a validation, but errorOnValidations was set to true`;
-    }
-    return {
-      description: type.r.desc,
-      ...typeToSchema(type.l, options),
-    };
+  const validations = type.operands.filter(
+    (operand): operand is Validation<any> => operand instanceof Validation
+  );
+  if(validations.length > 0 && options.errorOnValidations) {
+    throw `Structural type contains a validation, but errorOnValidations was set to true`;
   }
+
+  const operands = type.operands.filter(operand => !(operand instanceof Validation));
+  const schema: JSONSchema = operands.length === 1
+    ? typeToSchema(operands[0], options)
+    : { allOf: operands.map(operand => typeToSchema(operand, options)) };
+
+  if(validations.length === 0) return schema;
   return {
-    allOf: flatTypes(
-      type instanceof DefaultIntersect ? DefaultIntersect : MergeIntersect,
-      type,
-    ).map(t => typeToSchema(t, options)),
+    description: validations.map(validation => validation.desc).join("\n"),
+    ...schema,
+  };
+}
+
+function fromMergeIntersect(
+  type: MergeIntersect<any, any, any, any>,
+  options: Required<Options>,
+): JSONSchema {
+  return {
+    allOf: flatTypes(MergeIntersect, type).map(t => typeToSchema(t, options)),
   };
 }
 
@@ -284,7 +295,6 @@ function fromPartial(type: PartialStruct<any>, options: Required<Options>): JSON
 function flatTypes(
   klass: {
     new(...args: any): Either<any, any>
-                     | DefaultIntersect<any, any>
                      | MergeIntersect<any, any, any, any>
   },
   node: Type<any>
