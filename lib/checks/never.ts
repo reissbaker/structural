@@ -1,7 +1,7 @@
 import { Result, Err } from "../result";
-import { Type } from "../type";
+import { ConstraintType } from "../type";
 
-export class Never extends Type<never> {
+export class Never extends ConstraintType<never> {
   check(_: any): Result<never> {
     return new Err('never')
   }

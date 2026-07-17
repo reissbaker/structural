@@ -11,22 +11,22 @@
   "types": "build/index.d.ts",
   "license": "MIT",
   "scripts": {
-    "tsc": "rm -rf build/ && node_modules/.bin/tsc",
-    "watch": "rm -rf build/ && node_modules/.bin/tsc --watch",
-    "test": "jest --coverage"
+    "tsc": "rm -rf build/ && tsc",
+    "watch": "rm -rf build/ && tsc --watch",
+    "test": "tsc --noEmit && vitest run --coverage",
+    "test:watch": "vitest"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.1",
-    "jest": "^29.5.0",
-    "ts-jest": "^29.1.0",
-    "typescript": "^5.0.4"
+    "@vitest/coverage-v8": "^4.1.10",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
   },
   "files": [
     "index.ts",
     "package.json",
     "yarn.lock",
     "tsconfig.json",
-    "jest.config.js",
+    "vitest.config.mjs",
     "/build",
     "/lib",
     "/test"

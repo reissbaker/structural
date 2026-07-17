@@ -1,3 +1,4 @@
+import { describe, expect, test } from "vitest";
 import * as t from "..";
 describe("toTypescript", () => {
   describe("partial", () => {

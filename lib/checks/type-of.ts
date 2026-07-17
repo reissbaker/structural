@@ -1,5 +1,5 @@
 import { Err, Result } from "../result";
-import { Type } from "../type";
+import { ConstraintType } from "../type";
 
 export type ValidTypeString = "undefined"
                             | "object"
@@ -11,7 +11,7 @@ export type ValidTypeString = "undefined"
                             | "function"
                             ;
 
-export class TypeOf<T> extends Type<T> {
+export class TypeOf<T> extends ConstraintType<T> {
   readonly typestring: ValidTypeString;
 
   constructor(t: ValidTypeString) {

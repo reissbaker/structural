@@ -1,5 +1,7 @@
 import { Err, Result } from "../result";
-import { Type, CustomCommutativeAndType, Either, DefaultIntersect, Comment } from "../type";
+import { asKind } from "../as-kind";
+import { Kind, TypedKind } from "../kind";
+import { Comment, Either, Intersection, Projection, Type, TypeImpl } from "../type";
 import { GetType } from "../get-type";
 
 /*
@@ -27,35 +29,21 @@ type RawDict<V> = {
   [key: string]: V;
 };
 
-abstract class MergeableType<T> extends CustomCommutativeAndType<T> {
-  and<Incoming>(type: Type<Incoming>): Type<T & Incoming> {
-    if(type instanceof MergeableType) {
-      // @ts-ignore
-      return new MergeIntersect(this, type);
-    }
-    else if(type instanceof Either) {
-      return new Either(
-        this.and(type.l),
-        this.and(type.r),
-      );
-    }
-    else if(type instanceof DefaultIntersect) {
-      return new DefaultIntersect(
-        this.and(type.l),
-        this.and(type.r),
-      );
-    }
-    else if(type instanceof Comment) {
-      return new Comment(type.commentStr, this.and(type.wrapped));
-    }
-    return super.and(type);
+abstract class MergeableType<T> extends TypeImpl<T> {
+  protected merge<Incoming>(type: TypedKind<Incoming>): TypedKind<T & Incoming> | undefined {
+    if(!(type instanceof MergeableType)) return undefined;
+
+    return asKind<T & Incoming>(new MergeIntersect(
+      asKind(this),
+      type,
+    ));
   }
 }
 
 // Dicts and structs merge together in TypeScript, so we put both in the struct file
 export class Dict<V> extends MergeableType<RawDict<V>> {
-  readonly valueType: Type<V>;
-  constructor(v: Type<V>, readonly namedKey: string = "key") {
+  readonly valueType: TypedKind<V>;
+  constructor(v: TypedKind<V>, readonly namedKey: string = "key") {
     super();
     this.valueType = v;
   }
@@ -76,18 +64,13 @@ export class Dict<V> extends MergeableType<RawDict<V>> {
     return val as Result<RawDict<V>>;
   }
 
-  sliceResult(val: any): Result<RawDict<V>> {
-    const err = basicDictErrs(val);
-    if(err) return err;
-
-    const result: { [key: string]: any } = {};
+  protected project(val: any): Projection<RawDict<V>> {
+    const result: { [key: string]: V } = {};
     for(const prop in val) {
-      const sliced = this.valueType.sliceResult(val[prop]);
-      if(sliced instanceof Err) return new Err(`[${prop}]: ${result.message}`);
-      result[prop] = sliced;
+      const projection = this.projectionOf(this.valueType, val[prop]);
+      result[prop] = projection.kind === "none" ? val[prop] : projection.value;
     }
-
-    return result as Result<RawDict<V>>;
+    return { kind: "structural", value: result };
   }
 }
 
@@ -98,11 +81,11 @@ function basicDictErrs<V>(val: any): Err<V> | null {
   return null;
 }
 
-export function dict<V>(v: Type<V>): Dict<V> {
+export function dict<V>(v: TypedKind<V>): Dict<V> {
   return new Dict(v);
 }
 
-export type FieldDef = Type<any> | MissingKey<any> | OptionalKey<any>;
+export type FieldDef = Kind | MissingKey<any> | OptionalKey<any>;
 
 export type TypeStruct = {
   [key: string]: FieldDef
@@ -126,12 +109,12 @@ export type UnwrappedTypeStruct<T extends TypeStruct> =
   /* optional props */ Partial<Pick<UnwrapTypes<T>, OptionalPropertyNames<T>>>;
 
 export type TypeStructFor<T> = {
-  [K in keyof T]: Type<T[K]>;
+  [K in keyof T]: TypedKind<T[K]>;
 };
 
 export type StructFor<T> = Struct<TypeStructFor<T>>;
 
-export function keyType<T>(box: MissingKey<Type<T>> | OptionalKey<Type<T>> | Type<T>): Type<T> {
+export function keyType<T>(box: MissingKey<TypedKind<T>> | OptionalKey<TypedKind<T>> | TypedKind<T>): TypedKind<T> {
   if(box instanceof MissingKey || box instanceof OptionalKey) {
     return box.type;
   }
@@ -167,17 +150,22 @@ export class Struct<T extends TypeStruct> extends MergeableType<UnwrappedTypeStr
     return new Err(`${val} failed the following checks:\n${errs.join('\n')}`);
   }
 
-  sliceResult(val: any): Result<UnwrappedTypeStruct<T>> {
-    const typeErr = this.checkType(val);
-    if(typeErr) return typeErr;
+  protected project(val: any): Projection<UnwrappedTypeStruct<T>> {
     const sliced: { [key: string]: any } = {};
+    for(const prop in this.definition) {
+      if(!(prop in val)) continue;
 
-    const errs = this.checkFields(val, (t, val) => t.sliceResult(val), (key, val) => {
-      sliced[key] = val;
-    });
+      const field = this.definition[prop];
+      const value = val[prop];
+      if(value === undefined && allowsOptional(field)) {
+        sliced[prop] = undefined;
+        continue;
+      }
 
-    if(errs.length === 0) return sliced as UnwrappedTypeStruct<T>;
-    return new Err(`${val} failed the following checks:\n${errs.join('\n')}`);
+      const projection = this.projectionOf(keyType(field), value);
+      sliced[prop] = projection.kind === "none" ? value : projection.value;
+    }
+    return { kind: "structural", value: sliced as UnwrappedTypeStruct<T> };
   }
 
   private checkType(val: any): Err<UnwrappedTypeStruct<T>> | undefined {
@@ -230,11 +218,11 @@ export function exact<T extends TypeStruct>(def: T): Struct<T> {
   return new Struct(def, true);
 }
 
-export function optional<T extends Type<any>>(check: T): OptionalKey<T> {
+export function optional<T extends Kind>(check: T): OptionalKey<T> {
   return new OptionalKey(check);
 }
 
-export function allowMissing<T extends Type<any>>(check: T): MissingKey<T> {
+export function allowMissing<T extends Kind>(check: T): MissingKey<T> {
   return new MissingKey(check);
 }
 
@@ -277,8 +265,8 @@ export class PartialStruct<T extends TypeStruct> extends MergeableType<Unwrapped
   check(val: any): Result<UnwrappedTypeStruct<PartialTypeStruct<T>>> {
     return this.hiddenStruct.check(val);
   }
-  sliceResult(val: any): Result<UnwrappedTypeStruct<PartialTypeStruct<T>>> {
-    return this.hiddenStruct.sliceResult(val);
+  protected project(val: any): Projection<UnwrappedTypeStruct<PartialTypeStruct<T>>> {
+    return this.projectionOf(this.hiddenStruct, val);
   }
 
   reify(): Struct<PartialTypeStruct<T>> {
@@ -320,8 +308,8 @@ export function deepPartial<T extends TypeStruct>(ogstruct: Struct<T>): PartialS
 
 export class MergeIntersect<
   LVal, RVal,
-  L extends MergeableType<LVal>,
-  R extends MergeableType<RVal>,
+  L extends MergeableType<LVal> & Kind,
+  R extends MergeableType<RVal> & Kind,
 > extends MergeableType<LVal & RVal> {
 
   // DANGER: NEVER EVER LEAK THIS OBJECT
@@ -329,7 +317,7 @@ export class MergeIntersect<
   // .or functions. Do not use it AT ALL except to call .check or .sliceResult on it. It MAY be a
   // secret internal class called InternalDictStructMerge (defined below) that does not play well
   // with other types or type algebra.
-  protected readonly merged: Type<LVal & RVal>;
+  protected readonly merged: MergeableType<LVal & RVal>;
 
   constructor(readonly l: L, readonly r: R) {
     super();
@@ -339,18 +327,16 @@ export class MergeIntersect<
       struct: l => this.mergeStructAndMergeable(l, r),
       partial: l => this.mergeStructAndMergeable(l.reify(), r),
       merge: l => this.mergeIntersectAndMergeable(l, r),
-      internal: () => {
-        throw `leaked internal dict/struct merge class; structural error`;
-      },
-    });
+      internal: l => this.mergeInternalAndMergeable(l, r),
+    }) as MergeableType<LVal & RVal>;
   }
 
   check(val: any) {
     return this.merged.check(val);
   }
 
-  sliceResult(val: any) {
-    return this.merged.sliceResult(val);
+  protected project(val: any): Projection<LVal & RVal> {
+    return this.projectionOf(this.merged, val);
   }
 
   private mergeDictAndMergeable(
@@ -405,6 +391,19 @@ export class MergeIntersect<
     });
   }
 
+  private mergeInternalAndMergeable(
+    l: InternalDictStructMerge<any, any, any, any>,
+    r: MergeableType<any>,
+  ): MergeableType<any> {
+    return merge(r, {
+      dict: r => this.mergeInternalAndDict(l, r),
+      partial: r => this.mergeInternalAndStruct(l, r.reify()),
+      struct: r => this.mergeInternalAndStruct(l, r),
+      merge: r => this.mergeInternalAndIntersect(l, r),
+      internal: r => this.mergeInternalAndInternal(l, r),
+    });
+  }
+
   private mergeInternalAndDict(l: InternalDictStructMerge<any, any, any, any>, r: Dict<any>) {
     return new InternalDictStructMerge(l.s, this.mergeDicts(l.d, r));
   }
@@ -438,12 +437,15 @@ export class MergeIntersect<
     )
   }
 
-  private mergeDicts(l: Dict<L>, r: Dict<R>): Dict<L & R> {
+  private mergeDicts<Left, Right>(l: Dict<Left>, r: Dict<Right>): Dict<Left & Right> {
     return dict(l.valueType.and(r.valueType));
   }
 
-  private mergeDictAndStruct(l: Dict<L>, r: StructFor<R>) {
-    return new InternalDictStructMerge(r, l);
+  private mergeDictAndStruct<DictValue, Definition extends TypeStruct>(
+    dict: Dict<DictValue>,
+    struct: Struct<Definition>,
+  ): InternalDictStructMerge<Definition, DictValue, Struct<Definition>, Dict<DictValue>> {
+    return new InternalDictStructMerge(struct, dict);
   }
 
   private mergeStructs(l: Struct<any>, r: Struct<any>) {
@@ -523,7 +525,7 @@ class InternalDictStructMerge<
   SVal extends TypeStruct, DVal,
   S extends Struct<SVal>,
   D extends Dict<DVal>
-> extends Type<GetType<S> & GetType<D>> {
+> extends MergeableType<GetType<S> & GetType<D>> {
   readonly s: S;
   constructor(s: S, readonly d: D) {
     super();
@@ -538,11 +540,15 @@ class InternalDictStructMerge<
     return val;
   }
 
-  sliceResult(val: any) {
-    const dResult = this.d.sliceResult(val);
-    if(dResult instanceof Err) return dResult;
-    const sResult = this.s.sliceResult(val);
-    return Object.assign({}, dResult, sResult) as GetType<S> & GetType<D>;
+  protected project(val: any): Projection<GetType<S> & GetType<D>> {
+    const dProjection = this.projectionOf(this.d, val);
+    const sProjection = this.projectionOf(this.s, val);
+    const dValue = dProjection.kind === "none" ? val : dProjection.value;
+    const sValue = sProjection.kind === "none" ? val : sProjection.value;
+    return {
+      kind: "structural",
+      value: Object.assign({}, dValue, sValue) as GetType<S> & GetType<D>,
+    };
   }
 }
 
@@ -551,18 +557,18 @@ export const Nested = [
   PartialStruct,
   Dict,
   Either,
-  DefaultIntersect,
+  Intersection,
   MergeIntersect,
   Comment,
 ] as const;
 export type NestedType = InstanceType<(typeof Nested)[number]>;
 
-function deepPartialKind(kind: Type<any>): Type<any> {
+function deepPartialKind(kind: Kind): Kind {
   if(isNested(kind)) return handleNested(kind);
   return kind;
 }
 
-function handleNested(kind: NestedType): Type<any> {
+function handleNested(kind: NestedType): Kind {
   if(kind instanceof Struct) {
     if(hasNested(kind)) return deepPartial(kind);
     return new PartialStruct(kind);
@@ -571,11 +577,13 @@ function handleNested(kind: NestedType): Type<any> {
   if(kind instanceof Comment) return new Comment(kind.commentStr, deepPartialKind(kind.wrapped));
   if(kind instanceof Dict) return new Dict(deepPartialKind(kind.valueType), kind.namedKey);
   if(kind instanceof Either) return new Either(deepPartialKind(kind.l), deepPartialKind(kind.r));
-  if(kind instanceof MergeIntersect) return new DefaultIntersect(deepPartialKind(kind.l), deepPartialKind(kind.r));
-  return new DefaultIntersect(deepPartialKind(kind.l), deepPartialKind(kind.r));
+  if(kind instanceof Intersection) {
+    return new Intersection(kind.operands.map(deepPartialKind));
+  }
+  return new Intersection([ deepPartialKind(kind.l), deepPartialKind(kind.r) ]);
 }
 
-function isNested(kind: Type<any> | NestedType): kind is NestedType {
+function isNested(kind: Kind | NestedType): kind is NestedType {
   for(const t of Nested) {
     if(kind instanceof t) return true;
   }

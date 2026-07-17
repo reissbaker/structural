@@ -1,4 +1,4 @@
-import { Type, Comment, Either, DefaultIntersect, Validation } from "./type";
+import { Type, Comment, Either, Intersection, Validation } from "./type";
 import { TypeOf } from "./checks/type-of";
 import { InstanceOf } from "./checks/instance-of";
 import { Value } from "./checks/value";
@@ -58,7 +58,7 @@ export function toTypescript(...args: SingleConversion | SingleConversionWithOpt
   return output.join("\n\n");
 }
 
-function toTS(type: Kind, opts: ToTypescriptOpts): string {
+function toTS(type: Type<any>, opts: ToTypescriptOpts): string {
   if(opts.useReference) {
     for(const key in opts.useReference) {
       const val = opts.useReference[key];
@@ -68,8 +68,8 @@ function toTS(type: Kind, opts: ToTypescriptOpts): string {
 
   if(type instanceof Comment) return fromComment(type, opts);
   if(type instanceof Either) return fromEither(type, opts);
-  if(type instanceof DefaultIntersect) return fromIntersect(type, opts);
-  if(type instanceof MergeIntersect) return fromIntersect(type, opts);
+  if(type instanceof Intersection) return fromIntersection(type, opts);
+  if(type instanceof MergeIntersect) return fromMergeIntersect(type, opts);
   if(type instanceof Validation) return fromValidation();
   if(type instanceof TypeOf) return fromTypeof(type);
   if(type instanceof InstanceOf) return fromInstanceOf(type);
@@ -124,19 +124,36 @@ function fromEither(e: Either<any, any>, opts: ToTypescriptOpts) {
   ].join("\n");
 }
 
-// TODO: Should intersect strip immediate-child comments?
-function fromIntersect(
-  i: DefaultIntersect<any, any> | MergeIntersect<any, any, any, any>,
+function fromIntersection(i: Intersection<any>, opts: ToTypescriptOpts) {
+  const validations = i.operands.filter(
+    (type): type is Validation<any> => type instanceof Validation
+  );
+  const operands = i.operands.filter(type => !(type instanceof Validation));
+  if(operands.length === 0) return fromValidation();
+
+  const comments = validations.map(validation => formatCommentString(validation.desc, opts));
+  const rendered = renderIntersection(operands, opts);
+  if(comments.length === 0) return rendered;
+  return `${comments.join("\n")}\n${indent(opts)}${rendered}`;
+}
+
+function fromMergeIntersect(
+  i: MergeIntersect<any, any, any, any>,
   opts: ToTypescriptOpts,
 ) {
-  // Handle validations chained with actual TS types, converting them to comments
-  if(i.l instanceof Validation) return toTS(new Comment(i.l.desc, i.r), opts);
-  if(i.r instanceof Validation) return toTS(new Comment(i.r.desc, i.l), opts);
+  return renderIntersection([ i.l, i.r ], opts);
+}
 
+function renderIntersection(operands: ReadonlyArray<Type<any>>, opts: ToTypescriptOpts) {
   const indentation = indent(opts);
   return [
-    toTS(i.l, opts),
-    `${indentation}${opts.indent}& ${toTS(i.r, {...opts, indentLevel: opts.indentLevel + 1})}`,
+    toTS(operands[0], opts),
+    ...operands.slice(1).map(type => {
+      return `${indentation}${opts.indent}& ${toTS(type, {
+        ...opts,
+        indentLevel: opts.indentLevel + 1,
+      })}`;
+    }),
   ].join("\n");
 }
 
@@ -225,10 +242,10 @@ function fromStruct(s: Struct<any>, opts: ToTypescriptOpts) {
 
 type StrippedComments = {
   comments: string[],
-  inner: Kind,
+  inner: Type<any>,
 };
 
-function stripOuterComments(t: Kind | OptionalKey<any>): StrippedComments {
+function stripOuterComments(t: Type<any> | OptionalKey<any>): StrippedComments {
   if(t instanceof OptionalKey) return stripOuterComments(t.type);
   if(t instanceof Comment) {
     const inner = stripOuterComments(t.wrapped);
@@ -238,22 +255,40 @@ function stripOuterComments(t: Kind | OptionalKey<any>): StrippedComments {
     }
   }
 
-  const algebra = [ DefaultIntersect, MergeIntersect, Either ] as const;
+  if(t instanceof Intersection) {
+    const comments: string[] = [];
+    const operands: Kind[] = [];
+    for(const operand of t.operands) {
+      if(operand instanceof Validation) comments.push(operand.desc);
+      else if(operand instanceof Comment) {
+        comments.push(operand.commentStr);
+        operands.push(operand.wrapped);
+      }
+      else operands.push(operand);
+    }
 
-  for(const al of algebra) {
-    if(t instanceof al) {
-      if(t.l instanceof Validation) {
-        return stripOuterComments(new Comment(t.l.desc, t.r));
-      }
-      if(t.r instanceof Validation) {
-        return stripOuterComments(new Comment(t.r.desc, t.l));
-      }
-      if(t.l instanceof Comment) {
-        return stripOuterComments(handleStripAlgebra(t.l.commentStr, t.l.wrapped, t.r, al));
-      }
-      if(t.r instanceof Comment) {
-        return stripOuterComments(handleStripAlgebra(t.r.commentStr, t.l, t.r.wrapped, al));
-      }
+    if(comments.length > 0 && operands.length > 0) {
+      const inner = operands.length === 1 ? operands[0] : new Intersection(operands);
+      const stripped = stripOuterComments(inner);
+      return {
+        comments: comments.concat(stripped.comments),
+        inner: stripped.inner,
+      };
+    }
+  }
+
+  if(t instanceof Either) {
+    if(t.l instanceof Validation) {
+      return stripOuterComments(new Comment(t.l.desc, t.r));
+    }
+    if(t.r instanceof Validation) {
+      return stripOuterComments(new Comment(t.r.desc, t.l));
+    }
+    if(t.l instanceof Comment) {
+      return stripOuterComments(new Comment(t.l.commentStr, new Either(t.l.wrapped, t.r)));
+    }
+    if(t.r instanceof Comment) {
+      return stripOuterComments(new Comment(t.r.commentStr, new Either(t.l, t.r.wrapped)));
     }
   }
 
@@ -261,15 +296,6 @@ function stripOuterComments(t: Kind | OptionalKey<any>): StrippedComments {
     comments: [],
     inner: t,
   };
-}
-
-function handleStripAlgebra(
-  desc: string,
-  r: Type<any>,
-  l: Type<any>,
-  constr: { new(r: any, l: any): Type<any> }
-): Type<any> {
-  return new Comment(desc, new constr(r, l));
 }
 
 function fromDict(d: Dict<any>, opts: ToTypescriptOpts) {
