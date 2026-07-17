@@ -40,3 +40,32 @@ test("converts a whole bunch of types", () => {
     },
   });
 });
+
+test("exact structs emit closed object schemas", () => {
+  expect(t.toJSONSchema("user", t.exact({
+    name: t.str,
+  }))).toEqual({
+    $schema: t.JSON_SCHEMA_VERSION,
+    title: "user",
+    type: "object",
+    required: [ "name" ],
+    properties: {
+      name: { type: "string" },
+    },
+    additionalProperties: false,
+  });
+});
+
+test("subtype structs emit open object schemas", () => {
+  expect(t.toJSONSchema("user", t.subtype({
+    name: t.str,
+  }))).toEqual({
+    $schema: t.JSON_SCHEMA_VERSION,
+    title: "user",
+    type: "object",
+    required: [ "name" ],
+    properties: {
+      name: { type: "string" },
+    },
+  });
+});
