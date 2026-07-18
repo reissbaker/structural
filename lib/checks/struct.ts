@@ -1,4 +1,7 @@
 import { Err, Result } from "../result";
+import { at, multiple } from "../issue";
+import type { Issue } from "../issue";
+import { typeMismatch } from "../issues/shared";
 import { asKind } from "../as-kind";
 import { Kind, TypedKind } from "../kind";
 import { Comment, Either, Intersection, Projection, Type, TypeImpl } from "../type";
@@ -47,6 +50,17 @@ type ObjectShape = {
   readonly rest?: TypedKind<any>;
 };
 
+export type MissingIssue = {
+  readonly kind: "missing";
+  readonly subject: "object";
+};
+
+export type UnknownPropertiesIssue = {
+  readonly kind: "unknown-properties";
+  readonly count: number;
+  readonly subject: "object";
+};
+
 abstract class MergeableType<T> extends TypeImpl<T> {
   constructor(protected readonly objectShape: ObjectShape) {
     super();
@@ -56,34 +70,56 @@ abstract class MergeableType<T> extends TypeImpl<T> {
     const typeErr = basicObjectErr(val, this.objectShape.requirePlainObject);
     if(typeErr) return typeErr;
 
-    const errs: string[] = [];
+    const issues: Issue[] = [];
     for(const prop of ownKeys(this.objectShape.fields)) {
       const field = this.objectShape.fields[prop];
       if(!(prop in val)) {
         if(field.allowsMissing) continue;
-        errs.push(`missing key '${String(prop)}'`);
+        issues.push(at(
+          { kind: "property", key: prop },
+          { kind: "missing", subject: "object" },
+          "object",
+        ));
         continue;
       }
 
       const result = field.checker.check(val[prop]);
-      if(result instanceof Err) errs.push(result.message);
+      if(result instanceof Err) {
+        issues.push(at({ kind: "property", key: prop }, result.issue, "object"));
+      }
     }
 
     const valueKeys = this.objectShape.exact ? enumerableOwnKeys(val) : Object.keys(val);
+    let dictionaryIndex = 0;
+    let unknownProperties = 0;
     for(const prop of valueKeys) {
       if(hasOwn(this.objectShape.fields, prop)) continue;
 
       if(this.objectShape.rest) {
         const result = this.objectShape.rest.check(val[prop]);
-        if(result instanceof Err) errs.push(`[${String(prop)}]: ${result.message}`);
+        if(result instanceof Err) {
+          issues.push(at(
+            { kind: "dictionary-value", index: dictionaryIndex },
+            result.issue,
+            "object",
+          ));
+        }
+        dictionaryIndex += 1;
       }
       else if(this.objectShape.exact) {
-        errs.push(`unknown key ${String(prop)}`);
+        unknownProperties += 1;
       }
     }
 
-    if(errs.length === 0) return val as T;
-    return new Err(`${val} failed the following checks:\n${errs.join('\n')}`);
+    if(unknownProperties > 0) {
+      issues.push({
+        kind: "unknown-properties",
+        count: unknownProperties,
+        subject: "object",
+      });
+    }
+    if(issues.length === 0) return val as T;
+    return new Err(multiple(issues, "object"));
   }
 
   /*
@@ -97,36 +133,58 @@ abstract class MergeableType<T> extends TypeImpl<T> {
     if(typeErr) return typeErr;
 
     const result: { [key: string]: any } = {};
-    const errs: string[] = [];
+    const issues: Issue[] = [];
     for(const prop of ownKeys(this.objectShape.fields)) {
       const field = this.objectShape.fields[prop];
       if(!(prop in val)) {
         if(field.allowsMissing) continue;
-        errs.push(`missing key '${String(prop)}'`);
+        issues.push(at(
+          { kind: "property", key: prop },
+          { kind: "missing", subject: "object" },
+          "object",
+        ));
         continue;
       }
 
       const sliced = field.checker.sliceResult(val[prop]);
-      if(sliced instanceof Err) errs.push(sliced.message);
+      if(sliced instanceof Err) {
+        issues.push(at({ kind: "property", key: prop }, sliced.issue, "object"));
+      }
       else setOwn(result, prop, sliced);
     }
 
     const valueKeys = this.objectShape.exact ? enumerableOwnKeys(val) : Object.keys(val);
+    let dictionaryIndex = 0;
+    let unknownProperties = 0;
     for(const prop of valueKeys) {
       if(hasOwn(this.objectShape.fields, prop)) continue;
 
       if(this.objectShape.rest) {
         const sliced = this.objectShape.rest.sliceResult(val[prop]);
-        if(sliced instanceof Err) errs.push(`[${String(prop)}]: ${sliced.message}`);
+        if(sliced instanceof Err) {
+          issues.push(at(
+            { kind: "dictionary-value", index: dictionaryIndex },
+            sliced.issue,
+            "object",
+          ));
+        }
         else setOwn(result, prop, sliced);
+        dictionaryIndex += 1;
       }
       else if(this.objectShape.exact) {
-        errs.push(`unknown key ${String(prop)}`);
+        unknownProperties += 1;
       }
     }
 
-    if(errs.length === 0) return result as T;
-    return new Err(`${val} failed the following checks:\n${errs.join('\n')}`);
+    if(unknownProperties > 0) {
+      issues.push({
+        kind: "unknown-properties",
+        count: unknownProperties,
+        subject: "object",
+      });
+    }
+    if(issues.length === 0) return result as T;
+    return new Err(multiple(issues, "object"));
   }
 
   protected merge<Incoming>(type: TypedKind<Incoming>): TypedKind<T & Incoming> | undefined {
@@ -180,8 +238,8 @@ function emptyObjectFields(): ObjectFields {
   return Object.create(null) as ObjectFields;
 }
 
-function ownKeys<T extends object>(value: T): Array<keyof T> {
-  return Reflect.ownKeys(value) as Array<keyof T>;
+function ownKeys<T extends object>(value: T): Array<Extract<keyof T, string | symbol>> {
+  return Reflect.ownKeys(value) as Array<Extract<keyof T, string | symbol>>;
 }
 
 function enumerableOwnKeys(value: object): PropertyKey[] {
@@ -204,13 +262,14 @@ function setOwn(target: object, key: PropertyKey, value: any): void {
 }
 
 function basicObjectErr<V>(val: any, requirePlainObject: boolean): Err<V> | undefined {
-  if(typeof val !== 'object') return new Err(`${val} is not an object`);
-  if(Array.isArray(val)) return new Err(`${val} is an array`);
-  if(val === null) return new Err(`${val} is null`);
+  const expected = requirePlainObject ? "dictionary" : "object";
+  if(typeof val !== "object" || Array.isArray(val) || val === null) {
+    return new Err(typeMismatch(expected, val));
+  }
   if(requirePlainObject) {
     const prototype = Object.getPrototypeOf(val);
     if(prototype !== Object.prototype && prototype !== null) {
-      return new Err(`${val} is not a dictionary`);
+      return new Err(typeMismatch("dictionary", val));
     }
   }
   return undefined;

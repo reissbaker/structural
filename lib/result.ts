@@ -1,18 +1,22 @@
+import { formatIssue } from "./format-issue";
+import type { Issue } from "./issue";
+
 export class TypeError extends Error {
-  constructor(message: string) {
+  constructor(readonly issue: Issue, message: string) {
     super(message);
     this.name = this.constructor.name;
   }
 }
 
 export class Err<_> {
-  message: string;
-  constructor(str: string) {
-    this.message = str;
+  readonly message: string;
+
+  constructor(readonly issue: Issue) {
+    this.message = formatIssue(issue);
   }
 
-  toError() {
-    return new TypeError(this.message);
+  toError(): TypeError {
+    return new TypeError(this.issue, this.message);
   }
 }
 

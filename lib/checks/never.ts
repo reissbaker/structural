@@ -1,9 +1,15 @@
 import { Result, Err } from "../result";
+import { RuntimeType, runtimeTypeOf } from "../issues/shared";
 import { ConstraintType } from "../type";
 
+export type NeverIssue = {
+  readonly kind: "never";
+  readonly subject: RuntimeType;
+};
+
 export class Never extends ConstraintType<never> {
-  check(_: any): Result<never> {
-    return new Err('never')
+  check(val: any): Result<never> {
+    return new Err({ kind: "never", subject: runtimeTypeOf(val) });
   }
 }
 

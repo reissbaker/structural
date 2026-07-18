@@ -1,4 +1,6 @@
 import { Err, Result } from "../result";
+import { at } from "../issue";
+import { typeMismatch } from "../issues/shared";
 import { asKind } from "../as-kind";
 import { TypedKind } from "../kind";
 import { Projection, TypeImpl } from "../type";
@@ -12,10 +14,15 @@ export class SetType<V> extends TypeImpl<Set<V>> {
   }
 
   check(val: any): Result<Set<V>> {
-    if(!(val instanceof Set)) return new Err(`${val} is not an instance of Set`);
-    for(const v of val) {
-      const result = this.valueType.check(v);
-      if(result instanceof Err) return new Err(`{val} failed set check on value ${v}: ${result.message}`);
+    if(!(val instanceof Set)) return new Err(typeMismatch("set", val));
+
+    let index = 0;
+    for(const value of val) {
+      const result = this.valueType.check(value);
+      if(result instanceof Err) {
+        return new Err(at({ kind: "set-value", index }, result.issue, "set"));
+      }
+      index += 1;
     }
     return val as Set<V>;
   }
@@ -24,13 +31,17 @@ export class SetType<V> extends TypeImpl<Set<V>> {
    * Slice each captured value in one pass so nested child sliceResult overrides are preserved.
    */
   sliceResult(val: any): Result<Set<V>> {
-    if(!(val instanceof Set)) return new Err(`${val} is not an instance of Set`);
+    if(!(val instanceof Set)) return new Err(typeMismatch("set", val));
 
     const result = new Set<V>();
+    let index = 0;
     for(const value of val) {
       const sliced = this.valueType.sliceResult(value);
-      if(sliced instanceof Err) return sliced;
+      if(sliced instanceof Err) {
+        return new Err(at({ kind: "set-value", index }, sliced.issue, "set"));
+      }
       result.add(sliced);
+      index += 1;
     }
     return result;
   }

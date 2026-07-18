@@ -17,6 +17,9 @@
  */
 
 export * from "./result";
+export * from "./issue";
+export * from "./format-issue";
+export * from "./issues/shared";
 export * from "./type";
 export * from "./get-type";
 
