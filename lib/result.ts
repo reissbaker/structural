@@ -6,6 +6,10 @@ export class TypeError extends Error {
     super(message);
     this.name = this.constructor.name;
   }
+
+  formatError(nestedErrorCount: number): string {
+    return formatIssue(this.issue, nestedErrorCount);
+  }
 }
 
 export class Err<_> {
@@ -13,6 +17,10 @@ export class Err<_> {
 
   constructor(readonly issue: Issue) {
     this.message = formatIssue(issue);
+  }
+
+  formatError(nestedErrorCount: number): string {
+    return formatIssue(this.issue, nestedErrorCount);
   }
 
   toError(): TypeError {

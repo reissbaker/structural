@@ -5,11 +5,16 @@ import type {
   RuntimeType,
 } from "./issues/shared";
 
-export function formatIssue(issue: Issue): string {
-  return format(issue, []);
+export function formatIssue(issue: Issue, nestedErrorCount: number = Infinity): string {
+  validateNestedErrorCount(nestedErrorCount);
+  return format(issue, [], nestedErrorCount);
 }
 
-function format(issue: Issue, path: ReadonlyArray<PathSegment>): string {
+function format(
+  issue: Issue,
+  path: ReadonlyArray<PathSegment>,
+  nestedErrorCount: number,
+): string {
   switch(issue.kind) {
     case "type":
       return `${formatSubject(path, issue.subject)} is not ${expectedType(issue.expected)}`;
@@ -32,11 +37,11 @@ function format(issue: Issue, path: ReadonlyArray<PathSegment>): string {
     case "never":
       return `${formatSubject(path, issue.subject)} cannot satisfy never`;
     case "at":
-      return format(issue.issue, [ ...path, ...issue.path ]);
+      return format(issue.issue, [ ...path, ...issue.path ], nestedErrorCount);
     case "multiple":
-      return issue.issues.map(child => format(child, path)).join("\n");
+      return issue.issues.map(child => format(child, path, nestedErrorCount)).join("\n");
     case "union":
-      return formatUnion(issue.issues, path, issue.subject);
+      return formatUnion(issue.issues, path, issue.subject, nestedErrorCount);
     default:
       return assertNever(issue);
   }
@@ -46,6 +51,7 @@ function formatUnion(
   issues: ReadonlyArray<Issue>,
   path: ReadonlyArray<PathSegment>,
   unionSubject: RuntimeType,
+  nestedErrorCount: number,
 ): string {
   const expectations = issues.map(issue => simpleExpectation(issue, path));
   if(expectations.every((value): value is SimpleExpectation => value !== undefined)) {
@@ -57,9 +63,48 @@ function formatUnion(
 
   const heading = unionHeading(formatSubject(path, unionSubject), issues.length);
   const branches = issues.map((issue, index) => {
-    return indentBranch(`${index + 1}. `, format(issue, path));
+    const option = formatUnionOption(issue, path, nestedErrorCount);
+    return indentBranch(`${index + 1}. `, option);
   });
   return [ heading, ...branches ].join("\n");
+}
+
+type NestedError = {
+  readonly issue: Issue;
+  readonly path: ReadonlyArray<PathSegment>;
+};
+
+function formatUnionOption(
+  issue: Issue,
+  path: ReadonlyArray<PathSegment>,
+  nestedErrorCount: number,
+): string {
+  const errors = nestedErrors(issue, path);
+  const visible = errors.slice(0, nestedErrorCount).map(error => {
+    return format(error.issue, error.path, nestedErrorCount);
+  });
+  const omitted = errors.length - visible.length;
+  if(omitted > 0) {
+    visible.push(`... ${count(omitted, "more error", "more errors")} omitted for this option.`);
+  }
+  return visible.join("\n");
+}
+
+function nestedErrors(
+  issue: Issue,
+  path: ReadonlyArray<PathSegment>,
+): NestedError[] {
+  if(issue.kind === "at") {
+    return nestedErrors(issue.issue, [ ...path, ...issue.path ]);
+  }
+  if(issue.kind === "multiple") {
+    let errors: NestedError[] = [];
+    for(const child of issue.issues) {
+      errors = errors.concat(nestedErrors(child, path));
+    }
+    return errors;
+  }
+  return [ { issue, path } ];
 }
 
 type SimpleExpectation = {
@@ -86,6 +131,12 @@ function simpleExpectation(
     return { path, subject: issue.subject, expected: "null" };
   }
   return undefined;
+}
+
+function validateNestedErrorCount(value: number): void {
+  if(value !== Infinity && (!Number.isInteger(value) || value < 0)) {
+    throw new RangeError("nestedErrorCount must be a non-negative integer");
+  }
 }
 
 function unionHeading(value: string, optionCount: number): string {

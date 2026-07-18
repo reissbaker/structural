@@ -271,6 +271,97 @@ describe("issue formatting", () => {
   });
 });
 
+describe("limited union error formatting", () => {
+  const ManyErrors = t.subtype({
+    data: t.subtype({
+      one: t.str,
+      two: t.str,
+      three: t.str,
+      four: t.str,
+      five: t.str,
+      six: t.str,
+      seven: t.str,
+      eight: t.str,
+      nine: t.str,
+      ten: t.str,
+    }),
+  });
+  const TwoErrors = t.subtype({
+    left: t.str,
+    right: t.str,
+  });
+  function manyErrors(): t.Err<any> {
+    return errorOf(ManyErrors.or(TwoErrors).check({ data: {} }));
+  }
+
+  test("limits nested errors independently for each option", () => {
+    expect(manyErrors().formatError(2)).toBe([
+      "object did not match any option in the schema. There were 2 options, and all options had errors. The errors for each option were:",
+      "1. .data.one is missing",
+      "   .data.two is missing",
+      "   ... 8 more errors omitted for this option.",
+      "2. .left is missing",
+      "   .right is missing",
+    ].join("\n"));
+  });
+
+  test("keeps message fully formatted", () => {
+    const error = manyErrors();
+
+    expect(error.message).toContain(".data.one is missing");
+    expect(error.message).toContain(".data.ten is missing");
+    expect(error.message).toContain(".left is missing");
+    expect(error.message).toContain(".right is missing");
+    expect(error.message).not.toContain("omitted");
+  });
+
+  test("formats Err and TypeError identically", () => {
+    const error = manyErrors();
+    const thrown = error.toError();
+
+    expect(thrown.formatError(2)).toBe(error.formatError(2));
+    expect(thrown.message).toBe(error.message);
+  });
+
+  test("supports hiding every nested error", () => {
+    expect(manyErrors().formatError(0)).toBe([
+      "object did not match any option in the schema. There were 2 options, and all options had errors. The errors for each option were:",
+      "1. ... 10 more errors omitted for this option.",
+      "2. ... 2 more errors omitted for this option.",
+    ].join("\n"));
+  });
+
+  test("rejects invalid nested error counts", () => {
+    const error = manyErrors();
+
+    for(const count of [ -1, 1.5, NaN ]) {
+      expect(() => error.formatError(count)).toThrow(RangeError);
+      expect(() => error.toError().formatError(count)).toThrow(RangeError);
+    }
+  });
+
+  test("limits options in a union nested beneath a property", () => {
+    const type = t.subtype({
+      payload: t.subtype({
+        one: t.str,
+        two: t.str,
+      }).or(t.subtype({
+        three: t.str,
+        four: t.str,
+      })),
+    });
+    const nested = errorOf(type.check({ payload: {} }));
+
+    expect(nested.formatError(1)).toBe([
+      ".payload did not match any option in the schema. There were 2 options, and all options had errors. The errors for each option were:",
+      "1. .payload.one is missing",
+      "   ... 1 more error omitted for this option.",
+      "2. .payload.three is missing",
+      "   ... 1 more error omitted for this option.",
+    ].join("\n"));
+  });
+});
+
 describe("discriminated structural unions", () => {
   const SomeData = t.subtype({
     user: t.subtype({
