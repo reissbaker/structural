@@ -24,6 +24,22 @@ export class Arr<T> extends TypeImpl<Array<T>> {
     return val as Array<T>;
   }
 
+  /*
+   * Slice each element in one pass so nested structural checkers can preserve the exact values they
+   * validated. The default check-then-project flow would bypass a child's sliceResult override.
+   */
+  sliceResult(val: any): Result<Array<T>> {
+    if(!Array.isArray(val)) return new Err(`${val} is not an array`);
+
+    const result: T[] = [];
+    for(const element of val) {
+      const sliced = this.elementType.sliceResult(element);
+      if(sliced instanceof Err) return sliced;
+      result.push(sliced);
+    }
+    return result;
+  }
+
   protected merge<R>(type: TypedKind<R>): TypedKind<Array<T> & R> | undefined {
     if(!(type instanceof Arr)) return undefined;
 

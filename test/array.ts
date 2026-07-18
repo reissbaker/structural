@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import * as t from "..";
+import * as t from "../index";
 
 test("converts to typescript", () => {
   expect(t.toTypescript(t.array(t.bool))).toEqual("Array<boolean>");
@@ -47,4 +47,21 @@ test("sliced nested objects", () => {
   ]);
   const data: any = result[0];
   expect(data["name"]).toBeUndefined();
+});
+
+test("nested slicing returns the property value that passed validation", () => {
+  const check = t.array(t.subtype({
+    id: t.str,
+  }));
+  let reads = 0;
+  const element = Object.defineProperty({}, "id", {
+    enumerable: true,
+    get() {
+      reads += 1;
+      return reads === 1 ? "valid" : 5;
+    },
+  });
+
+  expect(check.slice([ element ])).toEqual([{ id: "valid" }]);
+  expect(reads).toBe(1);
 });

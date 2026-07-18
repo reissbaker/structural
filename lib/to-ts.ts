@@ -184,6 +184,9 @@ function fromInstanceOf(i: InstanceOf<any>) {
 
 function fromValue(v: Value<any>) {
   const vType = typeof v.val;
+  if(vType === "number" && !Number.isFinite(v.val)) {
+    throw new Error("Non-finite numbers can't be represented as TypeScript literal types");
+  }
   if(vType !== "string" && vType !== "number" && vType !== "boolean" && v.val !== null && v.val !== undefined) {
     throw new Error(
       "Only string, numeric, undefined, boolean, and null value types can be auto-converted to TypeScript"
@@ -199,6 +202,10 @@ function fromArr(a: Arr<any>, opts: ToTypescriptOpts) {
 }
 
 function fromStruct(s: Struct<any>, opts: ToTypescriptOpts) {
+  if(Object.getOwnPropertySymbols(s.definition).length > 0) {
+    throw new Error("Symbol properties can't be represented without a reference to their symbol");
+  }
+
   const lines = [ "{" ];
   const keyOpts = {
     ...opts,
@@ -209,7 +216,7 @@ function fromStruct(s: Struct<any>, opts: ToTypescriptOpts) {
 
   for(let i = 0; i < keys.length; i++) {
     const key = keys[i];
-    const keyType = [ key ];
+    const keyType = [ formatPropertyName(key) ];
     const val = s.definition[key];
     if(val instanceof MissingKey) {
       throw new Error(
@@ -311,6 +318,11 @@ function fromDict(d: Dict<any>, opts: ToTypescriptOpts) {
     `${i}${opts.indent}[${d.namedKey}: string]: ${valString}`,
     `${i}}`,
   ].join("\n");
+}
+
+function formatPropertyName(key: string): string {
+  if(/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(key)) return key;
+  return JSON.stringify(key);
 }
 
 function fromMap(m: MapType<any, any>, opts: ToTypescriptOpts) {

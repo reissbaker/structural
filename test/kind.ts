@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import * as t from "..";
+import * as t from "../index";
 
 test("allows type narrowing for exhaustiveness checking", () => {
   // Let's write a function that takes a validation, and see if we can use type narrowing with

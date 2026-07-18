@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import * as t from "..";
+import * as t from "../index";
 
 type A = { a: string };
 type B = { b: number };

@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import * as t from "..";
+import * as t from "../index";
 
 test("converts to typescript", () => {
   expect(t.toTypescript(t.map(t.num, t.bool))).toEqual("Map<number, boolean>");
@@ -59,4 +59,19 @@ test("sliced nested objects", () => {
   const result = check.slice(map);
   const data: any = result.get("hello");
   expect(data["name"]).toBeUndefined();
+});
+
+test("nested slicing returns the property value that passed validation", () => {
+  const check = t.map(t.str, t.subtype({ id: t.str }));
+  let reads = 0;
+  const value = Object.defineProperty({}, "id", {
+    enumerable: true,
+    get() {
+      reads += 1;
+      return reads === 1 ? "valid" : 5;
+    },
+  });
+
+  expect(check.slice(new Map([[ "key", value ]])).get("key")).toEqual({ id: "valid" });
+  expect(reads).toBe(1);
 });

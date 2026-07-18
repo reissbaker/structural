@@ -35,9 +35,15 @@ type ObjectField = {
   readonly allowsMissing: boolean;
 };
 
+type ObjectFields = {
+  [key: string]: ObjectField;
+  [key: symbol]: ObjectField;
+};
+
 type ObjectShape = {
-  readonly fields: { readonly [key: string]: ObjectField };
+  readonly fields: ObjectFields;
   readonly exact: boolean;
+  readonly requirePlainObject: boolean;
   readonly rest?: TypedKind<any>;
 };
 
@@ -47,15 +53,15 @@ abstract class MergeableType<T> extends TypeImpl<T> {
   }
 
   check(val: any): Result<T> {
-    const typeErr = basicObjectErr(val);
+    const typeErr = basicObjectErr(val, this.objectShape.requirePlainObject);
     if(typeErr) return typeErr;
 
     const errs: string[] = [];
-    for(const prop in this.objectShape.fields) {
+    for(const prop of ownKeys(this.objectShape.fields)) {
       const field = this.objectShape.fields[prop];
       if(!(prop in val)) {
         if(field.allowsMissing) continue;
-        errs.push(`missing key '${prop}'`);
+        errs.push(`missing key '${String(prop)}'`);
         continue;
       }
 
@@ -63,19 +69,63 @@ abstract class MergeableType<T> extends TypeImpl<T> {
       if(result instanceof Err) errs.push(result.message);
     }
 
-    for(const prop in val) {
-      if(prop in this.objectShape.fields) continue;
+    const valueKeys = this.objectShape.exact ? enumerableOwnKeys(val) : Object.keys(val);
+    for(const prop of valueKeys) {
+      if(hasOwn(this.objectShape.fields, prop)) continue;
 
       if(this.objectShape.rest) {
         const result = this.objectShape.rest.check(val[prop]);
-        if(result instanceof Err) errs.push(`[${prop}]: ${result.message}`);
+        if(result instanceof Err) errs.push(`[${String(prop)}]: ${result.message}`);
       }
       else if(this.objectShape.exact) {
-        errs.push(`unknown key ${prop}`);
+        errs.push(`unknown key ${String(prop)}`);
       }
     }
 
     if(errs.length === 0) return val as T;
+    return new Err(`${val} failed the following checks:\n${errs.join('\n')}`);
+  }
+
+  /*
+   * TypeImpl.sliceResult checks first and projects afterward, which normally means reading object
+   * properties twice. A getter can return a different value on the second read, allowing slicing
+   * to return a value that never passed validation. Validate and project each captured property
+   * value together so the returned object contains exactly the values that were checked.
+   */
+  sliceResult(val: any): Result<T> {
+    const typeErr = basicObjectErr(val, this.objectShape.requirePlainObject);
+    if(typeErr) return typeErr;
+
+    const result: { [key: string]: any } = {};
+    const errs: string[] = [];
+    for(const prop of ownKeys(this.objectShape.fields)) {
+      const field = this.objectShape.fields[prop];
+      if(!(prop in val)) {
+        if(field.allowsMissing) continue;
+        errs.push(`missing key '${String(prop)}'`);
+        continue;
+      }
+
+      const sliced = field.checker.sliceResult(val[prop]);
+      if(sliced instanceof Err) errs.push(sliced.message);
+      else setOwn(result, prop, sliced);
+    }
+
+    const valueKeys = this.objectShape.exact ? enumerableOwnKeys(val) : Object.keys(val);
+    for(const prop of valueKeys) {
+      if(hasOwn(this.objectShape.fields, prop)) continue;
+
+      if(this.objectShape.rest) {
+        const sliced = this.objectShape.rest.sliceResult(val[prop]);
+        if(sliced instanceof Err) errs.push(`[${String(prop)}]: ${sliced.message}`);
+        else setOwn(result, prop, sliced);
+      }
+      else if(this.objectShape.exact) {
+        errs.push(`unknown key ${String(prop)}`);
+      }
+    }
+
+    if(errs.length === 0) return result as T;
     return new Err(`${val} failed the following checks:\n${errs.join('\n')}`);
   }
 
@@ -90,22 +140,22 @@ abstract class MergeableType<T> extends TypeImpl<T> {
 
   protected project(val: any): Projection<T> {
     const result: { [key: string]: any } = {};
-    for(const prop in this.objectShape.fields) {
+    for(const prop of ownKeys(this.objectShape.fields)) {
       if(!(prop in val)) continue;
 
       const field = this.objectShape.fields[prop];
       const value = val[prop];
       const projection = this.projectionOf(field.checker, value);
-      result[prop] = projection.kind === "none" ? value : projection.value;
+      setOwn(result, prop, projection.kind === "none" ? value : projection.value);
     }
 
     if(this.objectShape.rest) {
-      for(const prop in val) {
-        if(prop in this.objectShape.fields) continue;
+      for(const prop of Object.keys(val)) {
+        if(hasOwn(this.objectShape.fields, prop)) continue;
 
         const value = val[prop];
         const projection = this.projectionOf(this.objectShape.rest, value);
-        result[prop] = projection.kind === "none" ? value : projection.value;
+        setOwn(result, prop, projection.kind === "none" ? value : projection.value);
       }
     }
 
@@ -117,7 +167,7 @@ abstract class MergeableType<T> extends TypeImpl<T> {
 export class Dict<V> extends MergeableType<RawDict<V>> {
   readonly valueType: TypedKind<V>;
   constructor(v: TypedKind<V>, readonly namedKey: string = "key") {
-    super({ fields: {}, exact: false, rest: v });
+    super({ fields: emptyObjectFields(), exact: false, requirePlainObject: true, rest: v });
     this.valueType = v;
   }
 
@@ -126,10 +176,43 @@ export class Dict<V> extends MergeableType<RawDict<V>> {
   }
 }
 
-function basicObjectErr<V>(val: any): Err<V> | undefined {
+function emptyObjectFields(): ObjectFields {
+  return Object.create(null) as ObjectFields;
+}
+
+function ownKeys<T extends object>(value: T): Array<keyof T> {
+  return Reflect.ownKeys(value) as Array<keyof T>;
+}
+
+function enumerableOwnKeys(value: object): PropertyKey[] {
+  return Reflect.ownKeys(value).filter(key => {
+    return Object.prototype.propertyIsEnumerable.call(value, key);
+  });
+}
+
+function hasOwn(value: object, key: PropertyKey): boolean {
+  return Object.prototype.hasOwnProperty.call(value, key);
+}
+
+function setOwn(target: object, key: PropertyKey, value: any): void {
+  Object.defineProperty(target, key, {
+    configurable: true,
+    enumerable: true,
+    value,
+    writable: true,
+  });
+}
+
+function basicObjectErr<V>(val: any, requirePlainObject: boolean): Err<V> | undefined {
   if(typeof val !== 'object') return new Err(`${val} is not an object`);
   if(Array.isArray(val)) return new Err(`${val} is an array`);
   if(val === null) return new Err(`${val} is null`);
+  if(requirePlainObject) {
+    const prototype = Object.getPrototypeOf(val);
+    if(prototype !== Object.prototype && prototype !== null) {
+      return new Err(`${val} is not a dictionary`);
+    }
+  }
   return undefined;
 }
 
@@ -140,7 +223,8 @@ export function dict<V>(v: TypedKind<V>): Dict<V> {
 export type FieldDef = Kind | MissingKey<any> | OptionalKey<any>;
 
 export type TypeStruct = {
-  [key: string]: FieldDef
+  [key: string]: FieldDef;
+  [key: symbol]: FieldDef;
 };
 
 // see this blog post for an explanation of this type shenanigans
@@ -183,8 +267,8 @@ export function allowsOptional<T extends Type<any>>(box: MissingKey<T> | T): box
 }
 
 function objectFields(definition: TypeStruct): ObjectShape["fields"] {
-  const fields: { [key: string]: ObjectField } = {};
-  for(const prop in definition) {
+  const fields = emptyObjectFields();
+  for(const prop of ownKeys(definition)) {
     const field = definition[prop];
     fields[prop] = {
       checker: field instanceof OptionalKey
@@ -201,7 +285,7 @@ export class Struct<T extends TypeStruct> extends MergeableType<UnwrappedTypeStr
   readonly exact: boolean;
 
   constructor(definition: T, exact: boolean) {
-    super({ fields: objectFields(definition), exact });
+    super({ fields: objectFields(definition), exact, requirePlainObject: false });
     this.definition = definition;
     this.exact = exact;
   }
@@ -239,23 +323,21 @@ export class PartialStruct<T extends TypeStruct> extends MergeableType<Unwrapped
   private readonly hiddenTypeStruct: PartialTypeStruct<T>;
   constructor(readonly struct: Struct<T>) {
     const partialDef: Partial<PartialTypeStruct<T>> = {};
-    for(const k in struct.definition) {
+    for(const k of ownKeys(struct.definition)) {
       const v = struct.definition[k];
-      if(v instanceof MissingKey) {
-        //@ts-ignore
-        partialDef[k] = optional(v.type);
-      }
-      else if(v instanceof OptionalKey) {
-        //@ts-ignore
-        partialDef[k] = optional(v.type);
+      if(v instanceof MissingKey || v instanceof OptionalKey) {
+        setOwn(partialDef, k, optional(v.type));
       }
       else {
-        //@ts-ignore
-        partialDef[k] = optional(v);
+        setOwn(partialDef, k, optional(v));
       }
     }
     const hiddenTypeStruct = partialDef as PartialTypeStruct<T>;
-    super({ fields: objectFields(hiddenTypeStruct), exact: struct.exact });
+    super({
+      fields: objectFields(hiddenTypeStruct),
+      exact: struct.exact,
+      requirePlainObject: false,
+    });
     this.hiddenTypeStruct = hiddenTypeStruct;
   }
 
@@ -276,20 +358,16 @@ export function deepPartial<T extends TypeStruct>(ogstruct: Struct<T>): PartialS
   // If we got this far, the struct has nesting, and therefore can't simply be ref-ed out when
   // converting to TypeScript. We must modify it recursively.
   const partialDef: Partial<DeepPartialTypeStruct<T>> = {};
-  for(const k in ogstruct.definition) {
+  for(const k of ownKeys(ogstruct.definition)) {
     const v = ogstruct.definition[k];
     if(v instanceof MissingKey) {
-      //@ts-ignore
-      partialDef[k] = new MissingKey(v.type);
+      setOwn(partialDef, k, new MissingKey(v.type));
     }
     else if(v instanceof OptionalKey) {
-      //@ts-ignore
-      partialDef[k] = optional(v.type);
+      setOwn(partialDef, k, optional(v.type));
     }
     else {
-      const deepKind = deepPartialKind(v);
-      // @ts-ignore
-      partialDef[k] = deepKind;
+      setOwn(partialDef, k, deepPartialKind(v));
     }
   }
   const struct = new Struct(partialDef as DeepPartialTypeStruct<T>, ogstruct.exact);
@@ -328,21 +406,38 @@ function mergeOperandShapes(operands: ReadonlyArray<ObjectOperand>): ObjectShape
 }
 
 function objectShapeOf(type: ObjectOperand): ObjectShape {
-  if(type instanceof Dict) return { fields: {}, exact: false, rest: type.valueType };
-  if(type instanceof Struct) return { fields: objectFields(type.definition), exact: type.exact };
+  if(type instanceof Dict) {
+    return {
+      fields: emptyObjectFields(),
+      exact: false,
+      requirePlainObject: true,
+      rest: type.valueType,
+    };
+  }
+  if(type instanceof Struct) {
+    return {
+      fields: objectFields(type.definition),
+      exact: type.exact,
+      requirePlainObject: false,
+    };
+  }
   if(type instanceof PartialStruct) {
     const struct = type.reify();
-    return { fields: objectFields(struct.definition), exact: struct.exact };
+    return {
+      fields: objectFields(struct.definition),
+      exact: struct.exact,
+      requirePlainObject: false,
+    };
   }
   throw `Unknown object type ${type}`;
 }
 
 function mergeObjectShapes(left: ObjectShape, right: ObjectShape): ObjectShape {
-  const fields: { [key: string]: ObjectField } = {};
+  const fields = emptyObjectFields();
 
-  for(const prop in left.fields) {
+  for(const prop of ownKeys(left.fields)) {
     const leftField = left.fields[prop];
-    if(prop in right.fields) {
+    if(hasOwn(right.fields, prop)) {
       fields[prop] = mergeFields(leftField, right.fields[prop]);
     }
     else if(right.rest) {
@@ -353,8 +448,8 @@ function mergeObjectShapes(left: ObjectShape, right: ObjectShape): ObjectShape {
     }
   }
 
-  for(const prop in right.fields) {
-    if(prop in left.fields) continue;
+  for(const prop of ownKeys(right.fields)) {
+    if(hasOwn(left.fields, prop)) continue;
 
     const rightField = right.fields[prop];
     fields[prop] = left.rest
@@ -369,6 +464,7 @@ function mergeObjectShapes(left: ObjectShape, right: ObjectShape): ObjectShape {
   return {
     fields,
     exact: left.exact && right.exact,
+    requirePlainObject: left.requirePlainObject || right.requirePlainObject,
     rest,
   };
 }
@@ -426,7 +522,7 @@ function isNested(kind: Kind | NestedType): kind is NestedType {
 }
 
 function hasNested(struct: Struct<any>) {
-  for(const k in struct.definition) {
+  for(const k of ownKeys(struct.definition)) {
     if(isNested(struct.definition[k])) return true;
   }
   return false;

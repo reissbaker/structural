@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import * as t from "..";
+import * as t from "../index";
 
 test(".toError converts to a special TypeError type", () => {
   const type = t.value("hello");

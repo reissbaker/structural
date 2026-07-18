@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import * as t from ".."
+import * as t from "../index"
 
 describe(t.CaseSwitch, () => {
   test("cannot construct with zero cases", () => {

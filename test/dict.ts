@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import * as t from "..";
+import * as t from "../index";
 
 test("converts to typescript", () => {
   expect(t.toTypescript(t.dict(t.str))).toEqual("{[key: string]: string}");
@@ -47,6 +47,13 @@ test("rejects dictionaries with non-matching values", () => {
   }).toThrow();
 });
 
+test("checks properties named like Object prototype properties", () => {
+  const check = t.dict(t.str);
+  expect(() => {
+    check.assert({ constructor: 5 });
+  }).toThrow();
+});
+
 test("rejects non-objects", () => {
   const check = t.dict(t.any);
   expect(() => {
@@ -66,6 +73,31 @@ test("rejects arrays", () => {
   expect(() => {
     check.assert([ ]);
   }).toThrow();
+});
+
+test("rejects non-dictionary object instances", () => {
+  const check = t.dict(t.str);
+
+  expect(() => {
+    check.assert(new Date());
+  }).toThrow();
+});
+
+test("slicing preserves properties named like Object prototype properties", () => {
+  const check = t.dict(t.str);
+  const input = { constructor: "value" };
+
+  expect(check.slice(input)).toEqual(input);
+});
+
+test("slicing preserves __proto__ as data without changing the prototype", () => {
+  const check = t.dict(t.str);
+  const input = JSON.parse('{"__proto__":"value"}');
+  const result = check.slice(input);
+
+  expect(Object.prototype.hasOwnProperty.call(result, "__proto__")).toBe(true);
+  expect(result["__proto__"]).toBe("value");
+  expect(Object.getPrototypeOf(result)).toBe(Object.prototype);
 });
 
 test("sliced nested objects", () => {

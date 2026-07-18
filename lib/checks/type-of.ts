@@ -20,7 +20,9 @@ export class TypeOf<T> extends ConstraintType<T> {
   }
 
   check(val: any): Result<T> {
-    if(typeof val === this.typestring) return val as T;
+    if(typeof val === this.typestring && (this.typestring !== "object" || val !== null)) {
+      return val as T;
+    }
     return new Err(`${val} is not a ${this.typestring}`);
   }
 }

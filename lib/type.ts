@@ -11,6 +11,7 @@ export type ProjectionKind = Projection<any>["kind"];
 
 export abstract class TypeImpl<T> {
   abstract check(val: any): Result<T>;
+  abstract sliceResult(val: any): Result<T>;
 
   protected abstract merge<R>(type: TypedKind<R>): TypedKind<T & R> | undefined;
   protected abstract project(val: any): Projection<T>;
@@ -51,18 +52,6 @@ export abstract class TypeImpl<T> {
    */
   literal(val: T): T {
     return val;
-  }
-
-  /*
-   * Slicing always validates the original input before applying projection.
-   */
-  sliceResult(val: any): Result<T> {
-    const checked = this.check(val);
-    if(checked instanceof Err) return checked;
-
-    const projection = this.project(val);
-    if(projection.kind === "none") return checked;
-    return projection.value;
   }
 
   /*
@@ -157,6 +146,15 @@ function assert<T>(result: Result<T>): T {
  */
 
 export abstract class UnmergeableType<T> extends TypeImpl<T> {
+  sliceResult(val: any): Result<T> {
+    const checked = this.check(val);
+    if(checked instanceof Err) return checked;
+
+    const projection = this.project(val);
+    if(projection.kind === "none") return checked;
+    return projection.value;
+  }
+
   protected merge<R>(_: TypedKind<R>): TypedKind<T & R> | undefined {
     return undefined;
   }
@@ -187,6 +185,10 @@ export class Comment<T> extends TypeImpl<T> {
 
   check(val: any): Result<T> {
     return this.wrapped.check(val);
+  }
+
+  sliceResult(val: any): Result<T> {
+    return this.wrapped.sliceResult(val);
   }
 
   protected merge<R>(type: TypedKind<R>): TypedKind<T & R> {
@@ -262,6 +264,18 @@ export class Either<L, R> extends TypeImpl<L|R> {
     return new Err(`${val} failed the following checks:\n${l.message}\n${r.message}`);
   }
 
+  /*
+   * Delegate slicing to each branch so a successful branch validates and projects captured values
+   * in one pass instead of being rechecked by project().
+   */
+  sliceResult(val: any): Result<L|R> {
+    const l = this.l.sliceResult(val);
+    if(!(l instanceof Err)) return l;
+    const r = this.r.sliceResult(val);
+    if(!(r instanceof Err)) return r;
+    return new Err(`${val} failed the following checks:\n${l.message}\n${r.message}`);
+  }
+
   protected merge<Incoming>(type: TypedKind<Incoming>): TypedKind<(L|R) & Incoming> {
     return new Either(
       this.l.and(type),
@@ -292,6 +306,15 @@ export class Intersection<T> extends TypeImpl<T> {
       if(result instanceof Err) return result;
     }
     return val as T;
+  }
+
+  sliceResult(val: any): Result<T> {
+    const checked = this.check(val);
+    if(checked instanceof Err) return checked;
+
+    const projection = this.project(val);
+    if(projection.kind === "none") return checked;
+    return projection.value;
   }
 
   protected merge<R>(type: TypedKind<R>): TypedKind<T & R> {

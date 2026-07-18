@@ -38,13 +38,13 @@ export type JSONSchema = Annotated<{ type: "string" }>
                        | Annotated<{ type: "null" }>
                        | Annotated<{}> // {} is JSON schema's any type
                        | Annotated<{
-                         type: "object",
-                         required: string[],
-                         properties: {
-                           [key: string]: JSONSchema,
-                         },
-                         additionalProperties?: false,
-                       }>
+                          type: "object",
+                          required: string[],
+                          properties: {
+                            [key: string]: JSONSchema,
+                          },
+                          additionalProperties?: false | JSONSchema,
+                        }>
                        | Annotated<{
                          type: "object",
                          // Dict<T> type is { properties: {}, additionalProperties: T }
@@ -137,12 +137,20 @@ function areSerializableValues(types: Array<Type<any>>): types is Array<Value<JS
 }
 
 function isSerializable(value: any): value is JSONValue {
-  try {
-    JSON.parse(JSON.stringify(value));
-  } catch {
+  if(value === null) return true;
+  if(typeof value === "string" || typeof value === "boolean") return true;
+  if(typeof value === "number") return Number.isFinite(value);
+  if(typeof value !== "object") return false;
+  if(Array.isArray(value)) return value.every(isSerializable);
+
+  const prototype = Object.getPrototypeOf(value);
+  if(prototype !== Object.prototype && prototype !== null) return false;
+
+  const keys = Reflect.ownKeys(value);
+  if(keys.some(key => typeof key !== "string" || !Object.prototype.propertyIsEnumerable.call(value, key))) {
     return false;
   }
-  return true;
+  return keys.every(key => isSerializable(value[key]));
 }
 
 function fromEither(type: Either<any, any>, options: Required<Options>): JSONSchema {
@@ -190,9 +198,70 @@ function fromMergeIntersect(
   type: MergeIntersect<any>,
   options: Required<Options>,
 ): JSONSchema {
-  return {
-    allOf: type.operands.map(operand => typeToSchema(operand, options)),
+  const containsExact = type.operands.some(operand => {
+    if(operand instanceof Struct) return operand.exact;
+    if(operand instanceof PartialStruct) return operand.struct.exact;
+    return false;
+  });
+  if(!containsExact) {
+    return {
+      allOf: type.operands.map(operand => typeToSchema(operand, options)),
+    };
+  }
+
+  const propertySchemas: { [key: string]: JSONSchema[] } = {};
+  const required = new Set<string>();
+  const restSchemas: JSONSchema[] = [];
+  let exact = true;
+
+  for(const operand of type.operands) {
+    if(operand instanceof Dict) {
+      exact = false;
+      restSchemas.push(typeToSchema(operand.valueType, options));
+      continue;
+    }
+
+    const struct = operand instanceof PartialStruct ? operand.reify() : operand;
+    if(Object.getOwnPropertySymbols(struct.definition).length > 0) {
+      throw `Symbol properties can't be represented in JSON Schema`;
+    }
+    exact = exact && struct.exact;
+
+    for(const key of Object.keys(struct.definition)) {
+      const field = struct.definition[key];
+      if(!(field instanceof MissingKey || field instanceof OptionalKey)) required.add(key);
+      const schema = typeToSchema(
+        field instanceof MissingKey || field instanceof OptionalKey ? field.type : field,
+        options,
+      );
+      if(propertySchemas[key]) propertySchemas[key].push(schema);
+      else propertySchemas[key] = [ schema ];
+    }
+  }
+
+  const properties: { [key: string]: JSONSchema } = {};
+  for(const key of Object.keys(propertySchemas)) {
+    properties[key] = combineSchemas(propertySchemas[key].concat(restSchemas));
+  }
+
+  const schema: {
+    type: "object",
+    required: string[],
+    properties: { [key: string]: JSONSchema },
+    additionalProperties?: false | JSONSchema,
+  } = {
+    type: "object",
+    required: Array.from(required),
+    properties,
   };
+  if(restSchemas.length > 0) schema.additionalProperties = combineSchemas(restSchemas);
+  else if(exact) schema.additionalProperties = false;
+  return schema;
+}
+
+function combineSchemas(schemas: JSONSchema[]): JSONSchema {
+  if(schemas.length === 1) return schemas[0];
+  return { allOf: schemas };
 }
 
 function fromValidation(type: Validation<any>, options: Required<Options>): JSONSchema {
@@ -210,7 +279,12 @@ function fromTypeof(type: TypeOf<any>): JSONSchema {
     case "string": return { type: "string" };
     case "number": return { type: "number" };
     case "boolean": return { type: "boolean" };
-    case "object": return { type: "object", properties: {} };
+    case "object": return {
+      anyOf: [
+        { type: "object", properties: {} },
+        { type: "array" },
+      ],
+    };
   }
   throw `Can't convert Structural TypeOf<${type.typestring}> checks into JSON Schema`
 }
@@ -235,6 +309,10 @@ function fromArray(type: Arr<any>, options: Required<Options>): JSONSchema {
 }
 
 function fromStruct(type: Struct<any>, options: Required<Options>): JSONSchema {
+  if(Object.getOwnPropertySymbols(type.definition).length > 0) {
+    throw `Symbol properties can't be represented in JSON Schema`;
+  }
+
   const properties: { [key: string]: JSONSchema } = {};
   const required: string[] = [];
   const keys = Object.keys(type.definition);

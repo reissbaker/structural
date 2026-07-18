@@ -1,10 +1,25 @@
 import { expect, test } from "vitest";
-import * as t from "..";
+import * as t from "../index";
 
 test("comments delegate checking to their wrapped values", () => {
   const commentedNumber = t.num.comment("A number");
   const num = commentedNumber.assert(5);
   expect(num + 1).toEqual(6);
+});
+
+test("comments delegate one-pass slicing to their wrapped values", () => {
+  const check = t.subtype({ id: t.str }).comment("An object");
+  let reads = 0;
+  const input = Object.defineProperty({}, "id", {
+    enumerable: true,
+    get() {
+      reads += 1;
+      return reads === 1 ? "valid" : 5;
+    },
+  });
+
+  expect(check.slice(input)).toEqual({ id: "valid" });
+  expect(reads).toBe(1);
 });
 
 test("multiline comments don't generate extra lines for pure whitespace", () => {
