@@ -16,7 +16,7 @@ export type Kind = Any
                  | MapType<any, any>
                  | Dict<any>
                  | Struct<any>
-                 | MergeIntersect<any, any, any, any>
+                 | MergeIntersect<any>
                  | Arr<any>
                  | Value<any>
                  | InstanceOf<any>

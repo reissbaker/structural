@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import * as t from "..";
+import * as t from "../index";
 
 describe("num", () => {
   test("converts to typescript", () => {
@@ -186,8 +186,15 @@ describe("obj", () => {
     expect(t.toJSONSchema("obj", t.obj)).toEqual({
       $schema: t.JSON_SCHEMA_VERSION,
       title: "obj",
-      type: "object",
-      properties: {},
+      anyOf: [
+        {
+          type: "object",
+          properties: {},
+        },
+        {
+          type: "array",
+        },
+      ],
     });
   });
 
@@ -195,6 +202,12 @@ describe("obj", () => {
     t.obj.assert({});
     t.obj.assert({ five: "hi" });
     t.obj.assert([]);
+  });
+
+  test("rejects null", () => {
+    expect(() => {
+      t.obj.assert(null);
+    }).toThrow();
   });
 
   test("rejects non-objects", () => {

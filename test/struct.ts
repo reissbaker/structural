@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import * as t from "..";
+import * as t from "../index";
 
 describe("converting to typescript", () => {
   test("converts to typescript", () => {
@@ -138,6 +138,29 @@ describe("subtype", () => {
     }).toThrow();
   });
 
+  test("checks symbol-named fields", () => {
+    const field = Symbol("field");
+    const check = t.subtype({
+      [field]: t.str,
+    });
+
+    expect(() => {
+      check.assert({});
+    }).toThrow();
+    check.assert({ [field]: "value" });
+  });
+
+  test("checks a declared __proto__ field as data", () => {
+    const check = t.subtype({
+      ["__proto__"]: t.str,
+    });
+
+    expect(() => {
+      check.assert({});
+    }).toThrow();
+    check.assert(JSON.parse('{"__proto__":"value"}'));
+  });
+
   test("rejects non-matching values", () => {
     const check = t.subtype({
       hi: t.str,
@@ -221,6 +244,23 @@ describe("exact", () => {
     }).toThrow();
   });
 
+  test("rejects unknown properties named like Object prototype properties", () => {
+    const check = t.exact({});
+
+    expect(() => {
+      check.assert({ constructor: 5 });
+    }).toThrow();
+  });
+
+  test("rejects unknown symbol properties", () => {
+    const extra = Symbol("extra");
+    const check = t.exact({});
+
+    expect(() => {
+      check.assert({ [extra]: 5 });
+    }).toThrow();
+  });
+
   test("rejects subtypes", () => {
     const check = t.exact({
       hi: t.str,
@@ -268,5 +308,22 @@ describe('slice', () => {
     expect(() => {
       check.slice({});
     }).toThrow();
+  });
+
+  test('returns the same property value that passed validation', () => {
+    const check = t.subtype({
+      foo: t.str,
+    });
+    let reads = 0;
+    const input = Object.defineProperty({}, 'foo', {
+      enumerable: true,
+      get() {
+        reads += 1;
+        return reads === 1 ? 'valid' : 5;
+      },
+    });
+
+    expect(check.slice(input)).toEqual({ foo: 'valid' });
+    expect(reads).toBe(1);
   });
 });

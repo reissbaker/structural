@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import * as t from "..";
+import * as t from "../index";
 
 test("assigns to a type if the option is given", () => {
   expect(
@@ -7,6 +7,12 @@ test("assigns to a type if the option is given", () => {
       orders: t.num,
     }), { assignToType: "Customer" })
   ).toEqual("type Customer = {\n  orders: number,\n};");
+});
+
+test("quotes property names that are not identifiers", () => {
+  expect(t.toTypescript(t.subtype({
+    "order-count": t.num,
+  }))).toEqual("{\n  \"order-count\": number,\n}");
 });
 
 test("overwrites types with references if given the option", () => {

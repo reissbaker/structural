@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import * as t from "..";
+import * as t from "../index";
 
 describe("or", () => {
   test("converts both sides to typescript", () => {
@@ -71,6 +71,21 @@ describe("or", () => {
     });
 
     expect(check.slice(10)).toEqual(10);
+  });
+
+  test("slices the same union branch value that passed validation", () => {
+    const check = t.subtype({ hi: t.str }).or(t.num);
+    let reads = 0;
+    const input = Object.defineProperty({}, "hi", {
+      enumerable: true,
+      get() {
+        reads += 1;
+        return reads === 1 ? "valid" : 5;
+      },
+    });
+
+    expect(check.slice(input)).toEqual({ hi: "valid" });
+    expect(reads).toBe(1);
   });
 });
 

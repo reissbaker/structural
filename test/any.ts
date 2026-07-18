@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import * as t from "..";
+import * as t from "../index";
 
 test("accepts anything", () => {
   t.any.assert(5);

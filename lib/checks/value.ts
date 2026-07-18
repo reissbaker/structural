@@ -9,7 +9,7 @@ export class Value<const T> extends UnmergeableType<T> {
   }
 
   check(val: any): Result<T> {
-    if(val === this.val) return val;
+    if(val === this.val || (Number.isNaN(val) && Number.isNaN(this.val))) return val;
     return new Err(`${val} is not equal to ${this.val}`);
   }
 

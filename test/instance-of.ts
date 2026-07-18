@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import * as t from "..";
+import * as t from "../index";
 
 class A {}
 class B {}

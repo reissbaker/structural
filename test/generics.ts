@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import * as t from "..";
+import * as t from "../index";
 
 test("functions act as generics", () => {
   function genericStruct<T>(u: t.Type<T>) {

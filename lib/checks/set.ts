@@ -20,6 +20,21 @@ export class SetType<V> extends TypeImpl<Set<V>> {
     return val as Set<V>;
   }
 
+  /*
+   * Slice each captured value in one pass so nested child sliceResult overrides are preserved.
+   */
+  sliceResult(val: any): Result<Set<V>> {
+    if(!(val instanceof Set)) return new Err(`${val} is not an instance of Set`);
+
+    const result = new Set<V>();
+    for(const value of val) {
+      const sliced = this.valueType.sliceResult(value);
+      if(sliced instanceof Err) return sliced;
+      result.add(sliced);
+    }
+    return result;
+  }
+
   protected merge<R>(type: TypedKind<R>): TypedKind<Set<V> & R> | undefined {
     if(!(type instanceof SetType)) return undefined;
 

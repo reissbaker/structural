@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import * as t from "..";
+import * as t from "../index";
 
 test("converts to typescript", () => {
   expect(t.toTypescript(t.never)).toEqual("never");
