@@ -1,4 +1,4 @@
-import { formatIssue } from "./format-issue";
+import { formatIssue, FormatErrorOptions } from "./format-issue";
 import type { Issue } from "./issue";
 
 export class TypeError extends Error {
@@ -7,8 +7,8 @@ export class TypeError extends Error {
     this.name = this.constructor.name;
   }
 
-  formatError(nestedErrorCount: number): string {
-    return formatIssue(this.issue, nestedErrorCount);
+  formatError(options: FormatErrorOptions = {}): string {
+    return formatIssue(this.issue, options);
   }
 }
 
@@ -19,8 +19,8 @@ export class Err<_> {
     this.message = formatIssue(issue);
   }
 
-  formatError(nestedErrorCount: number): string {
-    return formatIssue(this.issue, nestedErrorCount);
+  formatError(options: FormatErrorOptions = {}): string {
+    return formatIssue(this.issue, options);
   }
 
   toError(): TypeError {

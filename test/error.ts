@@ -295,7 +295,7 @@ describe("limited union error formatting", () => {
   }
 
   test("limits nested errors independently for each option", () => {
-    expect(manyErrors().formatError(2)).toBe([
+    expect(manyErrors().formatError({ maxNestedErrors: 2 })).toBe([
       "object did not match any option in the schema. There were 2 options, and all options had errors. The errors for each option were:",
       "1. .data.one is missing",
       "   .data.two is missing",
@@ -308,6 +308,8 @@ describe("limited union error formatting", () => {
   test("keeps message fully formatted", () => {
     const error = manyErrors();
 
+    expect(error.formatError()).toBe(error.message);
+    expect(error.formatError({})).toBe(error.message);
     expect(error.message).toContain(".data.one is missing");
     expect(error.message).toContain(".data.ten is missing");
     expect(error.message).toContain(".left is missing");
@@ -319,12 +321,12 @@ describe("limited union error formatting", () => {
     const error = manyErrors();
     const thrown = error.toError();
 
-    expect(thrown.formatError(2)).toBe(error.formatError(2));
+    expect(thrown.formatError({ maxNestedErrors: 2 })).toBe(error.formatError({ maxNestedErrors: 2 }));
     expect(thrown.message).toBe(error.message);
   });
 
   test("supports hiding every nested error", () => {
-    expect(manyErrors().formatError(0)).toBe([
+    expect(manyErrors().formatError({ maxNestedErrors: 0 })).toBe([
       "object did not match any option in the schema. There were 2 options, and all options had errors. The errors for each option were:",
       "1. ... 10 more errors omitted for this option.",
       "2. ... 2 more errors omitted for this option.",
@@ -335,8 +337,8 @@ describe("limited union error formatting", () => {
     const error = manyErrors();
 
     for(const count of [ -1, 1.5, NaN ]) {
-      expect(() => error.formatError(count)).toThrow(RangeError);
-      expect(() => error.toError().formatError(count)).toThrow(RangeError);
+      expect(() => error.formatError({ maxNestedErrors: count })).toThrow(RangeError);
+      expect(() => error.toError().formatError({ maxNestedErrors: count })).toThrow(RangeError);
     }
   });
 
@@ -352,7 +354,7 @@ describe("limited union error formatting", () => {
     });
     const nested = errorOf(type.check({ payload: {} }));
 
-    expect(nested.formatError(1)).toBe([
+    expect(nested.formatError({ maxNestedErrors: 1 })).toBe([
       ".payload did not match any option in the schema. There were 2 options, and all options had errors. The errors for each option were:",
       "1. .payload.one is missing",
       "   ... 1 more error omitted for this option.",

@@ -5,15 +5,22 @@ import type {
   RuntimeType,
 } from "./issues/shared";
 
-export function formatIssue(issue: Issue, nestedErrorCount: number = Infinity): string {
-  validateNestedErrorCount(nestedErrorCount);
-  return format(issue, [], nestedErrorCount);
+export type FormatErrorOptions = {
+  readonly maxNestedErrors?: number;
+};
+
+export function formatIssue(issue: Issue, options: FormatErrorOptions = {}): string {
+  const maxNestedErrors = options.maxNestedErrors === undefined
+    ? Infinity
+    : options.maxNestedErrors;
+  validateMaxNestedErrors(maxNestedErrors);
+  return format(issue, [], maxNestedErrors);
 }
 
 function format(
   issue: Issue,
   path: ReadonlyArray<PathSegment>,
-  nestedErrorCount: number,
+  maxNestedErrors: number,
 ): string {
   switch(issue.kind) {
     case "type":
@@ -37,11 +44,11 @@ function format(
     case "never":
       return `${formatSubject(path, issue.subject)} cannot satisfy never`;
     case "at":
-      return format(issue.issue, [ ...path, ...issue.path ], nestedErrorCount);
+      return format(issue.issue, [ ...path, ...issue.path ], maxNestedErrors);
     case "multiple":
-      return issue.issues.map(child => format(child, path, nestedErrorCount)).join("\n");
+      return issue.issues.map(child => format(child, path, maxNestedErrors)).join("\n");
     case "union":
-      return formatUnion(issue.issues, path, issue.subject, nestedErrorCount);
+      return formatUnion(issue.issues, path, issue.subject, maxNestedErrors);
     default:
       return assertNever(issue);
   }
@@ -51,7 +58,7 @@ function formatUnion(
   issues: ReadonlyArray<Issue>,
   path: ReadonlyArray<PathSegment>,
   unionSubject: RuntimeType,
-  nestedErrorCount: number,
+  maxNestedErrors: number,
 ): string {
   const expectations = issues.map(issue => simpleExpectation(issue, path));
   if(expectations.every((value): value is SimpleExpectation => value !== undefined)) {
@@ -63,7 +70,7 @@ function formatUnion(
 
   const heading = unionHeading(formatSubject(path, unionSubject), issues.length);
   const branches = issues.map((issue, index) => {
-    const option = formatUnionOption(issue, path, nestedErrorCount);
+    const option = formatUnionOption(issue, path, maxNestedErrors);
     return indentBranch(`${index + 1}. `, option);
   });
   return [ heading, ...branches ].join("\n");
@@ -77,11 +84,11 @@ type NestedError = {
 function formatUnionOption(
   issue: Issue,
   path: ReadonlyArray<PathSegment>,
-  nestedErrorCount: number,
+  maxNestedErrors: number,
 ): string {
   const errors = nestedErrors(issue, path);
-  const visible = errors.slice(0, nestedErrorCount).map(error => {
-    return format(error.issue, error.path, nestedErrorCount);
+  const visible = errors.slice(0, maxNestedErrors).map(error => {
+    return format(error.issue, error.path, maxNestedErrors);
   });
   const omitted = errors.length - visible.length;
   if(omitted > 0) {
@@ -133,9 +140,9 @@ function simpleExpectation(
   return undefined;
 }
 
-function validateNestedErrorCount(value: number): void {
+function validateMaxNestedErrors(value: number): void {
   if(value !== Infinity && (!Number.isInteger(value) || value < 0)) {
-    throw new RangeError("nestedErrorCount must be a non-negative integer");
+    throw new RangeError("maxNestedErrors must be a non-negative integer");
   }
 }
 
