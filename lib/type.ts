@@ -1,4 +1,6 @@
 import { Err, Result } from "./result";
+import { union } from "./issue";
+import { RuntimeType, runtimeTypeOf } from "./issues/shared";
 import { asKind } from "./as-kind";
 import type { Kind, TypedKind } from "./kind";
 
@@ -216,6 +218,13 @@ export class Comment<T> extends TypeImpl<T> {
 
 export type Validator<T> = (val: T) => boolean;
 
+export type ValidationIssue = {
+  readonly kind: "validation";
+  readonly description: string;
+  readonly threw: boolean;
+  readonly subject: RuntimeType;
+};
+
 export class Validation<T> extends ConstraintType<T> {
   readonly desc: string;
   readonly validator: Validator<T>;
@@ -229,11 +238,21 @@ export class Validation<T> extends ConstraintType<T> {
   check(val: any): Result<T> {
     try {
       if(this.validator(val)) return val;
-    } catch(e) {
-      return new Err(`Validation \`${this.desc}\` threw an error: ${e}`);
+    } catch {
+      return new Err({
+        kind: "validation",
+        description: this.desc,
+        threw: true,
+        subject: runtimeTypeOf(val),
+      });
     }
 
-    return new Err(`Failed validation: ${this.desc}`);
+    return new Err({
+      kind: "validation",
+      description: this.desc,
+      threw: false,
+      subject: runtimeTypeOf(val),
+    });
   }
 }
 
@@ -261,7 +280,7 @@ export class Either<L, R> extends TypeImpl<L|R> {
     if(!(l instanceof Err)) return l;
     const r = this.r.check(val);
     if(!(r instanceof Err)) return r;
-    return new Err(`${val} failed the following checks:\n${l.message}\n${r.message}`);
+    return new Err(union([ l.issue, r.issue ], runtimeTypeOf(val)));
   }
 
   /*
@@ -273,7 +292,7 @@ export class Either<L, R> extends TypeImpl<L|R> {
     if(!(l instanceof Err)) return l;
     const r = this.r.sliceResult(val);
     if(!(r instanceof Err)) return r;
-    return new Err(`${val} failed the following checks:\n${l.message}\n${r.message}`);
+    return new Err(union([ l.issue, r.issue ], runtimeTypeOf(val)));
   }
 
   protected merge<Incoming>(type: TypedKind<Incoming>): TypedKind<(L|R) & Incoming> {

@@ -1,5 +1,13 @@
 import { Err, Result } from "../result";
+import { RuntimeType, runtimeTypeOf } from "../issues/shared";
 import { OpaqueType } from "../type";
+
+export type GuardIssue = {
+  readonly kind: "guard";
+  readonly name: string;
+  readonly threw: boolean;
+  readonly subject: RuntimeType;
+};
 
 type Guard<T> = (val: any) => val is T
 
@@ -14,8 +22,22 @@ export class Is<T> extends OpaqueType<T> {
   }
 
   check(val: any): Result<T> {
-    if(this.isT(val)) return val;
-    return new Err(`${val} is not a ${this.name} (guard failed)`)
+    try {
+      if(this.isT(val)) return val;
+    } catch {
+      return new Err({
+        kind: "guard",
+        name: this.name,
+        threw: true,
+        subject: runtimeTypeOf(val),
+      });
+    }
+    return new Err({
+      kind: "guard",
+      name: this.name,
+      threw: false,
+      subject: runtimeTypeOf(val),
+    });
   }
 }
 

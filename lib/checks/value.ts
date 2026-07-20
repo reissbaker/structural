@@ -1,5 +1,17 @@
 import { Err, Result } from "../result";
+import {
+  LiteralExpectation,
+  literalExpectation,
+  RuntimeType,
+  runtimeTypeOf,
+} from "../issues/shared";
 import { Projection, UnmergeableType } from "../type";
+
+export type LiteralIssue = {
+  readonly kind: "literal";
+  readonly expected: LiteralExpectation;
+  readonly subject: RuntimeType;
+};
 
 export class Value<const T> extends UnmergeableType<T> {
   readonly val: T;
@@ -10,7 +22,11 @@ export class Value<const T> extends UnmergeableType<T> {
 
   check(val: any): Result<T> {
     if(val === this.val || (Number.isNaN(val) && Number.isNaN(this.val))) return val;
-    return new Err(`${val} is not equal to ${this.val}`);
+    return new Err({
+      kind: "literal",
+      expected: literalExpectation(this.val),
+      subject: runtimeTypeOf(val),
+    });
   }
 
   protected project(val: any): Projection<T> {

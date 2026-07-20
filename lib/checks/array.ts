@@ -1,4 +1,6 @@
 import { Err, Result } from "../result";
+import { at } from "../issue";
+import { typeMismatch } from "../issues/shared";
 import { asKind } from "../as-kind";
 import { TypedKind } from "../kind";
 import { Projection, TypeImpl } from "../type";
@@ -12,12 +14,14 @@ export class Arr<T> extends TypeImpl<Array<T>> {
   }
 
   check(val: any): Result<Array<T>> {
-    if(!Array.isArray(val)) return new Err(`${val} is not an array`);
+    if(!Array.isArray(val)) return new Err(typeMismatch("array", val));
 
-    for(const el of val) {
-      const result = this.elementType.check(el);
+    for(let index = 0; index < val.length; index++) {
+      const result = this.elementType.check(val[index]);
       // Don't bother collecting all errors in an array: for long arrays this is very obnoxious
-      if(result instanceof Err) return new Err(result.message);
+      if(result instanceof Err) {
+        return new Err(at({ kind: "array-element", index }, result.issue, "array"));
+      }
     }
 
     // If we got this far, there were no errors; it's an Array<T>
@@ -29,12 +33,14 @@ export class Arr<T> extends TypeImpl<Array<T>> {
    * validated. The default check-then-project flow would bypass a child's sliceResult override.
    */
   sliceResult(val: any): Result<Array<T>> {
-    if(!Array.isArray(val)) return new Err(`${val} is not an array`);
+    if(!Array.isArray(val)) return new Err(typeMismatch("array", val));
 
     const result: T[] = [];
-    for(const element of val) {
-      const sliced = this.elementType.sliceResult(element);
-      if(sliced instanceof Err) return sliced;
+    for(let index = 0; index < val.length; index++) {
+      const sliced = this.elementType.sliceResult(val[index]);
+      if(sliced instanceof Err) {
+        return new Err(at({ kind: "array-element", index }, sliced.issue, "array"));
+      }
       result.push(sliced);
     }
     return result;

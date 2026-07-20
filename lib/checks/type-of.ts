@@ -1,4 +1,5 @@
 import { Err, Result } from "../result";
+import { typeMismatch } from "../issues/shared";
 import { ConstraintType } from "../type";
 
 export type ValidTypeString = "undefined"
@@ -23,7 +24,7 @@ export class TypeOf<T> extends ConstraintType<T> {
     if(typeof val === this.typestring && (this.typestring !== "object" || val !== null)) {
       return val as T;
     }
-    return new Err(`${val} is not a ${this.typestring}`);
+    return new Err(typeMismatch(this.typestring, val));
   }
 }
 

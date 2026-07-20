@@ -1,4 +1,6 @@
 import { Err, Result } from "../result";
+import { at } from "../issue";
+import { typeMismatch } from "../issues/shared";
 import { asKind } from "../as-kind";
 import { TypedKind } from "../kind";
 import { Projection, TypeImpl } from "../type";
@@ -14,13 +16,19 @@ export class MapType<K, V> extends TypeImpl<Map<K, V>> {
   }
 
   check(val: any): Result<Map<K, V>> {
-    if(!(val instanceof Map)) return new Err(`${val} is not an instance of Map`);
+    if(!(val instanceof Map)) return new Err(typeMismatch("map", val));
 
-    for(const [k, v] of val) {
-      const kResult = this.keyType.check(k);
-      if(kResult instanceof Err) return new Err(`{val} key error: ${kResult.message}`);
-      const vResult = this.valueType.check(v);
-      if(vResult instanceof Err) return new Err(`{val} value error: ${vResult.message}`);
+    let index = 0;
+    for(const [key, value] of val) {
+      const keyResult = this.keyType.check(key);
+      if(keyResult instanceof Err) {
+        return new Err(at({ kind: "map-key", index }, keyResult.issue, "map"));
+      }
+      const valueResult = this.valueType.check(value);
+      if(valueResult instanceof Err) {
+        return new Err(at({ kind: "map-value", index }, valueResult.issue, "map"));
+      }
+      index += 1;
     }
 
     return val as Map<K, V>;
@@ -30,15 +38,21 @@ export class MapType<K, V> extends TypeImpl<Map<K, V>> {
    * Slice each captured entry in one pass so nested child sliceResult overrides are preserved.
    */
   sliceResult(val: any): Result<Map<K, V>> {
-    if(!(val instanceof Map)) return new Err(`${val} is not an instance of Map`);
+    if(!(val instanceof Map)) return new Err(typeMismatch("map", val));
 
     const result = new Map<K, V>();
+    let index = 0;
     for(const [key, value] of val) {
       const slicedKey = this.keyType.sliceResult(key);
-      if(slicedKey instanceof Err) return new Err(`{val} key error: ${slicedKey.message}`);
+      if(slicedKey instanceof Err) {
+        return new Err(at({ kind: "map-key", index }, slicedKey.issue, "map"));
+      }
       const slicedValue = this.valueType.sliceResult(value);
-      if(slicedValue instanceof Err) return new Err(`{val} value error: ${slicedValue.message}`);
+      if(slicedValue instanceof Err) {
+        return new Err(at({ kind: "map-value", index }, slicedValue.issue, "map"));
+      }
       result.set(slicedKey, slicedValue);
+      index += 1;
     }
     return result;
   }

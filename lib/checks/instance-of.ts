@@ -1,5 +1,12 @@
 import { Err, Result } from "../result";
+import { RuntimeType, runtimeTypeOf } from "../issues/shared";
 import { OpaqueType } from "../type";
+
+export type InstanceOfIssue = {
+  readonly kind: "instance-of";
+  readonly expectedClass: string | undefined;
+  readonly subject: RuntimeType;
+};
 
 export type Constructor<T> = Function & { prototype: T }
 
@@ -13,7 +20,11 @@ export class InstanceOf<T> extends OpaqueType<T> {
 
   check(val: any): Result<T> {
     if(val instanceof this.klass) return val as Result<T>;
-    return new Err(`${val} is not an instance of ${this.klass}`);
+    return new Err({
+      kind: "instance-of",
+      expectedClass: this.klass.name || undefined,
+      subject: runtimeTypeOf(val),
+    });
   }
 }
 
