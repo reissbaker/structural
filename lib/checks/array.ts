@@ -3,14 +3,14 @@ import { at } from "../issue";
 import { typeMismatch } from "../issues/shared";
 import { asKind } from "../as-kind";
 import { TypedKind } from "../kind";
-import { Projection, TypeImpl } from "../type";
+import { Projection, Type } from "../type";
 
-export class Arr<T> extends TypeImpl<Array<T>> {
+export class Arr<T> extends Type<Array<T>> {
   readonly elementType: TypedKind<T>;
 
-  constructor(t: TypedKind<T>) {
+  constructor(t: Type<T>) {
     super();
-    this.elementType = t;
+    this.elementType = asKind(t);
   }
 
   check(val: any): Result<Array<T>> {
@@ -65,6 +65,6 @@ export class Arr<T> extends TypeImpl<Array<T>> {
   }
 }
 
-export function array<T>(t: TypedKind<T>): Arr<T> {
+export function array<T>(t: Type<T>): Arr<T> {
   return new Arr(t);
 }

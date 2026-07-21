@@ -22,6 +22,7 @@ export * from "./format-issue";
 export * from "./issues/shared";
 export * from "./type";
 export * from "./get-type";
+export * from "./union";
 
 export * from "./checks/type-of";
 export * from "./checks/instance-of";

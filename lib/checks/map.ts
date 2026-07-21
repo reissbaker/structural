@@ -3,16 +3,16 @@ import { at } from "../issue";
 import { typeMismatch } from "../issues/shared";
 import { asKind } from "../as-kind";
 import { TypedKind } from "../kind";
-import { Projection, TypeImpl } from "../type";
+import { Projection, Type } from "../type";
 
-export class MapType<K, V> extends TypeImpl<Map<K, V>> {
+export class MapType<K, V> extends Type<Map<K, V>> {
   readonly keyType: TypedKind<K>;
   readonly valueType: TypedKind<V>;
 
-  constructor(k: TypedKind<K>, v: TypedKind<V>) {
+  constructor(k: Type<K>, v: Type<V>) {
     super();
-    this.keyType = k;
-    this.valueType = v;
+    this.keyType = asKind(k);
+    this.valueType = asKind(v);
   }
 
   check(val: any): Result<Map<K, V>> {
@@ -80,6 +80,6 @@ export class MapType<K, V> extends TypeImpl<Map<K, V>> {
   }
 }
 
-export function map<K, V>(k: TypedKind<K>, v: TypedKind<V>): MapType<K, V> {
+export function map<K, V>(k: Type<K>, v: Type<V>): MapType<K, V> {
   return new MapType(k, v);
 }

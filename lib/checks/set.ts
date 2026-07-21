@@ -3,14 +3,14 @@ import { at } from "../issue";
 import { typeMismatch } from "../issues/shared";
 import { asKind } from "../as-kind";
 import { TypedKind } from "../kind";
-import { Projection, TypeImpl } from "../type";
+import { Projection, Type } from "../type";
 
-export class SetType<V> extends TypeImpl<Set<V>> {
+export class SetType<V> extends Type<Set<V>> {
   readonly valueType: TypedKind<V>;
 
-  constructor(v: TypedKind<V>) {
+  constructor(v: Type<V>) {
     super();
-    this.valueType = v;
+    this.valueType = asKind(v);
   }
 
   check(val: any): Result<Set<V>> {
@@ -64,6 +64,6 @@ export class SetType<V> extends TypeImpl<Set<V>> {
   }
 }
 
-export function set<V>(v: TypedKind<V>): SetType<V> {
+export function set<V>(v: Type<V>): SetType<V> {
   return new SetType(v);
 }

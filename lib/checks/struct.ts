@@ -4,7 +4,7 @@ import type { Issue } from "../issue";
 import { typeMismatch } from "../issues/shared";
 import { asKind } from "../as-kind";
 import { Kind, TypedKind } from "../kind";
-import { Comment, Either, Intersection, Projection, Type, TypeImpl } from "../type";
+import { Comment, Either, Intersection, Projection, Type } from "../type";
 import { GetType } from "../get-type";
 import { undef } from "./primitives";
 
@@ -61,7 +61,7 @@ export type UnknownPropertiesIssue = {
   readonly subject: "object";
 };
 
-abstract class MergeableType<T> extends TypeImpl<T> {
+abstract class MergeableType<T> extends Type<T> {
   constructor(protected readonly objectShape: ObjectShape) {
     super();
   }
@@ -123,7 +123,7 @@ abstract class MergeableType<T> extends TypeImpl<T> {
   }
 
   /*
-   * TypeImpl.sliceResult checks first and projects afterward, which normally means reading object
+   * Type.sliceResult checks first and projects afterward, which normally means reading object
    * properties twice. A getter can return a different value on the second read, allowing slicing
    * to return a value that never passed validation. Validate and project each captured property
    * value together so the returned object contains exactly the values that were checked.
@@ -224,9 +224,9 @@ abstract class MergeableType<T> extends TypeImpl<T> {
 // Dicts and structs merge together in TypeScript, so we put both in the struct file
 export class Dict<V> extends MergeableType<RawDict<V>> {
   readonly valueType: TypedKind<V>;
-  constructor(v: TypedKind<V>, readonly namedKey: string = "key") {
-    super({ fields: emptyObjectFields(), exact: false, requirePlainObject: true, rest: v });
-    this.valueType = v;
+  constructor(v: Type<V>, readonly namedKey: string = "key") {
+    super({ fields: emptyObjectFields(), exact: false, requirePlainObject: true, rest: asKind(v) });
+    this.valueType = asKind(v);
   }
 
   keyName(key: string): Dict<V> {
@@ -275,11 +275,11 @@ function basicObjectErr<V>(val: any, requirePlainObject: boolean): Err<V> | unde
   return undefined;
 }
 
-export function dict<V>(v: TypedKind<V>): Dict<V> {
+export function dict<V>(v: Type<V>): Dict<V> {
   return new Dict(v);
 }
 
-export type FieldDef = Kind | MissingKey<any> | OptionalKey<any>;
+export type FieldDef = Type<any> | MissingKey<any> | OptionalKey<any>;
 
 export type TypeStruct = {
   [key: string]: FieldDef;
@@ -304,12 +304,12 @@ export type UnwrappedTypeStruct<T extends TypeStruct> =
   /* optional props */ Partial<Pick<UnwrapTypes<T>, OptionalPropertyNames<T>>>;
 
 export type TypeStructFor<T> = {
-  [K in keyof T]: TypedKind<T[K]>;
+  [K in keyof T]: Type<T[K]>;
 };
 
 export type StructFor<T> = Struct<TypeStructFor<T>>;
 
-export function keyType<T>(box: MissingKey<TypedKind<T>> | OptionalKey<TypedKind<T>> | TypedKind<T>): TypedKind<T> {
+export function keyType<T extends Type<any>>(box: MissingKey<T> | OptionalKey<T> | T): T {
   if(box instanceof MissingKey || box instanceof OptionalKey) {
     return box.type;
   }
@@ -331,8 +331,8 @@ function objectFields(definition: TypeStruct): ObjectShape["fields"] {
     const field = definition[prop];
     fields[prop] = {
       checker: field instanceof OptionalKey
-        ? undef.or(field.type)
-        : keyType(field),
+        ? asKind(undef.or(field.type))
+        : asKind(keyType(field)),
       allowsMissing: field instanceof MissingKey || field instanceof OptionalKey,
     };
   }
@@ -358,11 +358,11 @@ export function exact<T extends TypeStruct>(def: T): Struct<T> {
   return new Struct(def, true);
 }
 
-export function optional<T extends Kind>(check: T): OptionalKey<T> {
+export function optional<T extends Type<any>>(check: T): OptionalKey<T> {
   return new OptionalKey(check);
 }
 
-export function allowMissing<T extends Kind>(check: T): MissingKey<T> {
+export function allowMissing<T extends Type<any>>(check: T): MissingKey<T> {
   return new MissingKey(check);
 }
 
@@ -426,7 +426,7 @@ export function deepPartial<T extends TypeStruct>(ogstruct: Struct<T>): PartialS
       setOwn(partialDef, k, optional(v.type));
     }
     else {
-      setOwn(partialDef, k, deepPartialKind(v));
+      setOwn(partialDef, k, deepPartialKind(asKind(v)));
     }
   }
   const struct = new Struct(partialDef as DeepPartialTypeStruct<T>, ogstruct.exact);
