@@ -508,7 +508,7 @@ function mergeObjectShapes(left: ObjectShape, right: ObjectShape): ObjectShape {
   }
 
   const rest = left.rest && right.rest
-    ? left.rest.and(right.rest)
+    ? asKind(left.rest.and(right.rest))
     : left.rest || right.rest;
 
   return {
@@ -521,14 +521,14 @@ function mergeObjectShapes(left: ObjectShape, right: ObjectShape): ObjectShape {
 
 function mergeFields(left: ObjectField, right: ObjectField): ObjectField {
   return {
-    checker: left.checker.and(right.checker),
+    checker: asKind(left.checker.and(right.checker)),
     allowsMissing: left.allowsMissing && right.allowsMissing,
   };
 }
 
 function mergeFieldAndType(field: ObjectField, type: TypedKind<any>): ObjectField {
   return {
-    checker: field.checker.and(type),
+    checker: asKind(field.checker.and(type)),
     allowsMissing: field.allowsMissing,
   };
 }
