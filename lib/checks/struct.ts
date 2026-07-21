@@ -55,9 +55,8 @@ export type MissingIssue = {
   readonly subject: "object";
 };
 
-export type UnknownPropertiesIssue = {
-  readonly kind: "unknown-properties";
-  readonly count: number;
+export type UnknownPropertyIssue = {
+  readonly kind: "unknown-property";
   readonly subject: "object";
 };
 
@@ -91,7 +90,6 @@ abstract class MergeableType<T> extends Type<T> {
 
     const valueKeys = this.objectShape.exact ? enumerableOwnKeys(val) : Object.keys(val);
     let dictionaryIndex = 0;
-    let unknownProperties = 0;
     for(const prop of valueKeys) {
       if(hasOwn(this.objectShape.fields, prop)) continue;
 
@@ -107,17 +105,14 @@ abstract class MergeableType<T> extends Type<T> {
         dictionaryIndex += 1;
       }
       else if(this.objectShape.exact) {
-        unknownProperties += 1;
+        issues.push(at(
+          { kind: "property", key: prop },
+          { kind: "unknown-property", subject: "object" },
+          "object",
+        ));
       }
     }
 
-    if(unknownProperties > 0) {
-      issues.push({
-        kind: "unknown-properties",
-        count: unknownProperties,
-        subject: "object",
-      });
-    }
     if(issues.length === 0) return val as T;
     return new Err(multiple(issues, "object"));
   }
@@ -155,7 +150,6 @@ abstract class MergeableType<T> extends Type<T> {
 
     const valueKeys = this.objectShape.exact ? enumerableOwnKeys(val) : Object.keys(val);
     let dictionaryIndex = 0;
-    let unknownProperties = 0;
     for(const prop of valueKeys) {
       if(hasOwn(this.objectShape.fields, prop)) continue;
 
@@ -172,17 +166,14 @@ abstract class MergeableType<T> extends Type<T> {
         dictionaryIndex += 1;
       }
       else if(this.objectShape.exact) {
-        unknownProperties += 1;
+        issues.push(at(
+          { kind: "property", key: prop },
+          { kind: "unknown-property", subject: "object" },
+          "object",
+        ));
       }
     }
 
-    if(unknownProperties > 0) {
-      issues.push({
-        kind: "unknown-properties",
-        count: unknownProperties,
-        subject: "object",
-      });
-    }
     if(issues.length === 0) return result as T;
     return new Err(multiple(issues, "object"));
   }
@@ -242,7 +233,7 @@ function ownKeys<T extends object>(value: T): Array<Extract<keyof T, string | sy
   return Reflect.ownKeys(value) as Array<Extract<keyof T, string | symbol>>;
 }
 
-function enumerableOwnKeys(value: object): PropertyKey[] {
+function enumerableOwnKeys(value: object): Array<string | symbol> {
   return Reflect.ownKeys(value).filter(key => {
     return Object.prototype.propertyIsEnumerable.call(value, key);
   });
