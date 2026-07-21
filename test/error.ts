@@ -146,9 +146,11 @@ describe("issue formatting", () => {
   });
 
   test("structures an unknown property as a path", () => {
-    const error = errorOf(t.exact({}).check({ poop: true }));
+    const type = t.exact({});
+    const error = errorOf(type.check({ poop: true }));
 
     expect(error.message).toBe(".poop is an unknown property");
+    expect(() => type.slice({ poop: true })).toThrow(".poop is an unknown property");
     expect(error.issue).toEqual({
       kind: "at",
       subject: "object",
