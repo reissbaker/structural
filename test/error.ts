@@ -383,7 +383,7 @@ describe("limited union error formatting", () => {
     ].join("\n"));
   });
 
-  test("limits the number of options in deeply nested unions", () => {
+  test("deduplicates options in deeply nested unions before limiting them", () => {
     const Stream = t.union(
       t.undef,
       t.undef,
@@ -404,19 +404,30 @@ describe("limited union error formatting", () => {
       messages: t.array(t.str),
     }));
     const error = errorOf(type.check({ stream: true }));
-
-    expect(error.formatError({ maxNestedErrors: 4 })).toBe([
+    const expected = [
       "object did not match any option in the schema. There were 2 options, and all options had errors. The errors for each option were:",
       "1. .model is missing",
       "   .messages is missing",
-      "2. .stream did not match any option in the schema. There were 9 options, and all options had errors. The errors for each option were:",
+      "2. .stream did not match any option in the schema. There were 3 options, and all options had errors. The errors for each option were:",
       "   1. .stream is not undefined",
-      "   2. .stream is not undefined",
-      "   3. .stream does not equal null",
-      "   4. .stream is not undefined",
-      "   ... 5 more options omitted.",
+      "   2. .stream does not equal null",
+      "   3. .stream does not equal false",
       "   .model is missing",
       "   .messages is missing",
+    ].join("\n");
+
+    expect(error.message).toBe(expected);
+    expect(error.formatError({ maxNestedErrors: 4 })).toBe(expected);
+    expect(error.formatError({ maxNestedErrors: 2 })).toBe([
+      "object did not match any option in the schema. There were 2 options, and all options had errors. The errors for each option were:",
+      "1. .model is missing",
+      "   .messages is missing",
+      "2. .stream did not match any option in the schema. There were 3 options, and all options had errors. The errors for each option were:",
+      "   1. .stream is not undefined",
+      "   2. .stream does not equal null",
+      "   ... 1 more option omitted.",
+      "   .model is missing",
+      "   ... 1 more error omitted for this option.",
     ].join("\n"));
   });
 });
