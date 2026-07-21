@@ -4,7 +4,7 @@ import type { Issue } from "../issue";
 import { typeMismatch } from "../issues/shared";
 import { asKind } from "../as-kind";
 import { Kind, TypedKind } from "../kind";
-import { Comment, Either, Intersection, Projection, Type } from "../type";
+import { Comment, Either, Intersection, Projection, Type, TypeImpl } from "../type";
 import { GetType } from "../get-type";
 import { undef } from "./primitives";
 
@@ -60,8 +60,8 @@ export type UnknownPropertyIssue = {
   readonly subject: "object";
 };
 
-abstract class MergeableType<T> extends Type<T> {
-  constructor(protected readonly objectShape: ObjectShape) {
+abstract class MergeableType<T> extends TypeImpl<T> {
+  constructor(private readonly objectShape: ObjectShape) {
     super();
   }
 

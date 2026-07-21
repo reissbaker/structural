@@ -3,9 +3,9 @@ import { at } from "../issue";
 import { typeMismatch } from "../issues/shared";
 import { asKind } from "../as-kind";
 import { TypedKind } from "../kind";
-import { Projection, Type } from "../type";
+import { Projection, Type, TypeImpl } from "../type";
 
-export class Arr<T> extends Type<Array<T>> {
+export class Arr<T> extends TypeImpl<Array<T>> {
   readonly elementType: TypedKind<T>;
 
   constructor(t: Type<T>) {

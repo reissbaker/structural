@@ -7,7 +7,7 @@ test("Kind includes every exported concrete Type class", () => {
   assertNever<{
     [K in Exclude<
       keyof typeof t,
-      "Type" | "UnmergeableType" | "ConstraintType" | "OpaqueType"
+      "Type" | "TypeImpl" | "UnmergeableType" | "ConstraintType" | "OpaqueType"
     >]: (typeof t)[K] extends abstract new(...args: any[]) => infer Instance
       ? Instance extends t.Type<any>
         ? Instance extends t.Kind
@@ -17,7 +17,7 @@ test("Kind includes every exported concrete Type class", () => {
       : never;
   }[Exclude<
     keyof typeof t,
-    "Type" | "UnmergeableType" | "ConstraintType" | "OpaqueType"
+    "Type" | "TypeImpl" | "UnmergeableType" | "ConstraintType" | "OpaqueType"
   >]>();
 
   expect(true).toBe(true);

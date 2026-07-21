@@ -3,9 +3,9 @@ import { at } from "../issue";
 import { typeMismatch } from "../issues/shared";
 import { asKind } from "../as-kind";
 import { TypedKind } from "../kind";
-import { Projection, Type } from "../type";
+import { Projection, Type, TypeImpl } from "../type";
 
-export class MapType<K, V> extends Type<Map<K, V>> {
+export class MapType<K, V> extends TypeImpl<Map<K, V>> {
   readonly keyType: TypedKind<K>;
   readonly valueType: TypedKind<V>;
 
