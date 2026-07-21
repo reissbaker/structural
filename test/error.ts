@@ -130,7 +130,7 @@ describe("issue formatting", () => {
     expect(error.message).toBe("<1st value in set>.id is not a number");
   });
 
-  test("does not render dictionary or unknown property names", () => {
+  test("anonymizes dictionary keys and renders exact-type unknown property names", () => {
     const dictionaryError = errorOf(t.subtype({
       settings: t.dict(t.num),
     }).check({ settings: { "private-key": "private" } }));
@@ -139,7 +139,27 @@ describe("issue formatting", () => {
     }).check({ profile: { "private-one": 1, "private-two": 2 } }));
 
     expect(dictionaryError.message).toBe(".settings.<1st value in dictionary> is not a number");
-    expect(exactError.message).toBe(".profile has 2 unknown properties");
+    expect(exactError.message).toBe([
+      ".profile[\"private-one\"] is an unknown property",
+      ".profile[\"private-two\"] is an unknown property",
+    ].join("\n"));
+  });
+
+  test("structures an unknown property as a path", () => {
+    const type = t.exact({});
+    const error = errorOf(type.check({ poop: true }));
+
+    expect(error.message).toBe(".poop is an unknown property");
+    expect(() => type.slice({ poop: true })).toThrow(".poop is an unknown property");
+    expect(error.issue).toEqual({
+      kind: "at",
+      subject: "object",
+      path: [ { kind: "property", key: "poop" } ],
+      issue: {
+        kind: "unknown-property",
+        subject: "object",
+      },
+    });
   });
 
   test("condenses simple union failures", () => {
@@ -487,9 +507,15 @@ describe("error privacy", () => {
     expectSecretAbsent(t.num.or(t.bool), secret);
   });
 
-  test("does not retain or render input-derived property names", () => {
+  test("does not retain or render dictionary property names", () => {
     expectSecretAbsent(t.dict(t.num), { [secret]: secret });
-    expectSecretAbsent(t.exact({}), { [secret]: true });
+  });
+
+  test("retains exact-type unknown property names for diagnostics", () => {
+    const error = errorOf(t.exact({}).check({ [secret]: true }));
+
+    expect(error.message).toContain(secret);
+    expect(JSON.stringify(error.issue)).toContain(secret);
   });
 
   test("does not retain or render exceptions thrown by callbacks", () => {

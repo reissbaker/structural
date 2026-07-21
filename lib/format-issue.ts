@@ -39,8 +39,8 @@ function format(
         : `${formatSubject(path, issue.subject)} failed validation ${quote(issue.description)}`;
     case "missing":
       return `${formatSubject(path, issue.subject)} is missing`;
-    case "unknown-properties":
-      return `${formatSubject(path, issue.subject)} has ${count(issue.count, "unknown property", "unknown properties")}`;
+    case "unknown-property":
+      return `${formatSubject(path, issue.subject)} is an unknown property`;
     case "never":
       return `${formatSubject(path, issue.subject)} cannot satisfy never`;
     case "at":

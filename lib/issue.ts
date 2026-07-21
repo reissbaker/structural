@@ -1,7 +1,7 @@
 import type { InstanceOfIssue } from "./checks/instance-of";
 import type { GuardIssue } from "./checks/is";
 import type { NeverIssue } from "./checks/never";
-import type { MissingIssue, UnknownPropertiesIssue } from "./checks/struct";
+import type { MissingIssue, UnknownPropertyIssue } from "./checks/struct";
 import type { LiteralIssue } from "./checks/value";
 import type { RuntimeType, TypeMismatchIssue } from "./issues/shared";
 import type { ValidationIssue } from "./type";
@@ -13,7 +13,7 @@ export type LeafIssue =
   | GuardIssue
   | ValidationIssue
   | MissingIssue
-  | UnknownPropertiesIssue
+  | UnknownPropertyIssue
   | NeverIssue;
 
 export type PathSegment =
