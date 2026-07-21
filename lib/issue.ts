@@ -69,7 +69,7 @@ export function multiple(issues: ReadonlyArray<Issue>, subject: RuntimeType): Is
   return { kind: "multiple", subject, issues: flattened };
 }
 
-export function union(issues: ReadonlyArray<Issue>, subject: RuntimeType): UnionIssue {
+export function unionIssue(issues: ReadonlyArray<Issue>, subject: RuntimeType): UnionIssue {
   const flattened: Issue[] = [];
   for(const issue of issues) {
     if(issue.kind === "union") flattened.push(...issue.issues);

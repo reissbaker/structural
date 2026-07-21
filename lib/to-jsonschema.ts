@@ -1,4 +1,4 @@
-import { Type, Comment, Either, Intersection, Validation } from "./type";
+import { Comment, Either, Intersection, Validation } from "./type";
 import { TypeOf } from "./checks/type-of";
 import { InstanceOf } from "./checks/instance-of";
 import { Value } from "./checks/value";
@@ -94,7 +94,7 @@ export function toJSONSchema(title: string, type: Kind, opts?: Options): TopLeve
   return addMetadata(title, typeToSchema(type, options));
 }
 
-function typeToSchema(type: Type<any>, options: Required<Options>): JSONSchema {
+function typeToSchema(type: Kind, options: Required<Options>): JSONSchema {
   if(type instanceof Comment) {
     return {
       description: formatCommentString(type.commentStr),
@@ -128,7 +128,7 @@ function typeToSchema(type: Type<any>, options: Required<Options>): JSONSchema {
   return fromPartial(type, options);
 }
 
-function areSerializableValues(types: Array<Type<any>>): types is Array<Value<JSONValue>> {
+function areSerializableValues(types: Array<Kind>): types is Array<Value<JSONValue>> {
   for(const type of types) {
     if(!(type instanceof Value)) return false;
     if(!isSerializable(type.val)) return false;
@@ -372,8 +372,8 @@ function fromPartial(type: PartialStruct<any>, options: Required<Options>): JSON
 
 function flatTypes(
   klass: { new(...args: any): Either<any, any> },
-  node: Type<any>
-): Array<Type<any>> {
+  node: Kind
+): Array<Kind> {
   if(node instanceof klass) {
     return flatTypes(klass, node.l).concat(flatTypes(klass, node.r));
   }

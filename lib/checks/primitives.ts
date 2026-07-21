@@ -1,4 +1,4 @@
-import { TypedKind } from "../kind";
+import { Type } from "../type";
 import { typeOf } from "./type-of";
 import { value } from "./value";
 
@@ -12,6 +12,6 @@ export const undef = typeOf<undefined>('undefined');
 export const nil = value<null>(null);
 export const obj = typeOf<Object>('object');
 
-export function maybe<T>(check: TypedKind<T>) {
+export function maybe<T>(check: Type<T>) {
   return check.or(nil);
 }

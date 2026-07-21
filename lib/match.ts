@@ -1,10 +1,10 @@
-import { TypedKind } from './kind'
+import { Type } from './type'
 
 class Case<In, Out> {
-  type: TypedKind<In>
+  type: Type<In>
   fn: (x: In) => Out
 
-  constructor(type: TypedKind<In>, fn: (x: In) => Out) {
+  constructor(type: Type<In>, fn: (x: In) => Out) {
     this.type = type
     this.fn = fn
   }
@@ -18,7 +18,7 @@ type OutOfCase<T extends Case<any, any>> = T extends Case<any, infer Out> ?
 
 export class CaseSwitch<Cases extends Case<any, any>> {
   cases: Cases[]
-  private memoAccept: TypedKind<InOfCase<Cases>> | undefined
+  private memoAccept: Type<InOfCase<Cases>> | undefined
 
   constructor(cases: Cases[]) {
     if (cases.length === 0) {
@@ -28,7 +28,7 @@ export class CaseSwitch<Cases extends Case<any, any>> {
   }
 
   // implemented lazily because not every CaseSwitch will be used
-  get accept(): TypedKind<InOfCase<Cases>> {
+  get accept(): Type<InOfCase<Cases>> {
     if (this.memoAccept) {
       return this.memoAccept
     }
@@ -55,7 +55,7 @@ export class CaseSwitch<Cases extends Case<any, any>> {
   /**
    * Create a new CaseSwitch that also handles the specified case.
    */
-  when<In, Out>(type: TypedKind<In>, fn: (v: In) => Out): CaseSwitch<Cases | Case<In, Out>> {
+  when<In, Out>(type: Type<In>, fn: (v: In) => Out): CaseSwitch<Cases | Case<In, Out>> {
     const c = new Case(type, fn)
     return new CaseSwitch([...this.cases, c])
   }
@@ -64,7 +64,7 @@ export class CaseSwitch<Cases extends Case<any, any>> {
 /**
  * Create a type switch that can be used with `match()`.
  */
-export function when<In, Out>(type: TypedKind<In>, fn: (v: In) => Out) {
+export function when<In, Out>(type: Type<In>, fn: (v: In) => Out) {
   const c = new Case(type, fn)
   return new CaseSwitch([c])
 }

@@ -13,7 +13,7 @@ import { Kind } from "./kind";
 
 type ToTypescriptOpts = {
   useReference?: {
-    [ref: string]: Type<any>,
+    [ref: string]: Kind,
   },
 
   indent: string,
@@ -58,7 +58,7 @@ export function toTypescript(...args: SingleConversion | SingleConversionWithOpt
   return output.join("\n\n");
 }
 
-function toTS(type: Type<any>, opts: ToTypescriptOpts): string {
+function toTS(type: Kind, opts: ToTypescriptOpts): string {
   if(opts.useReference) {
     for(const key in opts.useReference) {
       const val = opts.useReference[key];
@@ -144,7 +144,7 @@ function fromMergeIntersect(
   return renderIntersection(i.operands, opts);
 }
 
-function renderIntersection(operands: ReadonlyArray<Type<any>>, opts: ToTypescriptOpts) {
+function renderIntersection(operands: ReadonlyArray<Kind>, opts: ToTypescriptOpts) {
   const indentation = indent(opts);
   return [
     toTS(operands[0], opts),
@@ -249,10 +249,10 @@ function fromStruct(s: Struct<any>, opts: ToTypescriptOpts) {
 
 type StrippedComments = {
   comments: string[],
-  inner: Type<any>,
+  inner: Kind,
 };
 
-function stripOuterComments(t: Type<any> | OptionalKey<any>): StrippedComments {
+function stripOuterComments(t: Kind | OptionalKey<any>): StrippedComments {
   if(t instanceof OptionalKey) return stripOuterComments(t.type);
   if(t instanceof Comment) {
     const inner = stripOuterComments(t.wrapped);

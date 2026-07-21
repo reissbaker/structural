@@ -1,4 +1,4 @@
-import type { Comment, Either, Intersection, TypeImpl, Validation } from "./type";
+import type { Comment, Either, Intersection, Type, Validation } from "./type";
 import type { TypeOf } from "./checks/type-of";
 import type { InstanceOf } from "./checks/instance-of";
 import type { Value } from "./checks/value";
@@ -29,4 +29,4 @@ export type Kind = Any
                  | PartialStruct<any>
                  ;
 
-export type TypedKind<T> = Kind & TypeImpl<T>;
+export type TypedKind<T> = Kind & Type<T>;
