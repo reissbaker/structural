@@ -13,7 +13,7 @@ import { Kind } from "./kind";
 
 type ToTypescriptOpts = {
   useReference?: {
-    [ref: string]: Kind,
+    [ref: string]: Type<any>,
   },
 
   indent: string,
@@ -24,9 +24,9 @@ export type TypescriptUserOpts = Partial<ToTypescriptOpts> & {
   assignToType?: string,
 };
 
-type SingleConversionWithOpts = [ type: Kind, userOpts: TypescriptUserOpts ];
-type SingleConversion = [ type: Kind ];
-type MultipleConversion = [ types: { [name: string]: Kind } ];
+type SingleConversionWithOpts = [ type: Type<any>, userOpts: TypescriptUserOpts ];
+type SingleConversion = [ type: Type<any> ];
+type MultipleConversion = [ types: { [name: string]: Type<any> } ];
 
 export function toTypescript(...args: SingleConversion | SingleConversionWithOpts | MultipleConversion): string {
   if(args.length === 2) {
@@ -35,7 +35,7 @@ export function toTypescript(...args: SingleConversion | SingleConversionWithOpt
     // assignToType is only valid at the top level, so delete it if it exists
     delete opts.assignToType;
 
-    const ts = toTS(type, opts);
+    const ts = toTS(type as Kind, opts);
 
     if(userOpts.assignToType) return `type ${userOpts.assignToType} = ${ts};`;
     return ts;

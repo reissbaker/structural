@@ -1,4 +1,4 @@
-import { Comment, Either, Intersection, Validation } from "./type";
+import { Type, Comment, Either, Intersection, Validation } from "./type";
 import { TypeOf } from "./checks/type-of";
 import { InstanceOf } from "./checks/instance-of";
 import { Value } from "./checks/value";
@@ -85,13 +85,13 @@ const defaultOpts: Required<Options> = {
   errorOnNever: true,
 };
 
-export function toJSONSchema(title: string, type: Kind, opts?: Options): TopLevel<JSONSchema> {
+export function toJSONSchema(title: string, type: Type<any>, opts?: Options): TopLevel<JSONSchema> {
   const options = {
     ...defaultOpts,
     ...opts,
   };
 
-  return addMetadata(title, typeToSchema(type, options));
+  return addMetadata(title, typeToSchema(type as Kind, options));
 }
 
 function typeToSchema(type: Kind, options: Required<Options>): JSONSchema {

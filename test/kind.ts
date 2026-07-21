@@ -1,6 +1,28 @@
 import { expect, test } from "vitest";
 import * as t from "../index";
 
+function assertNever<_ extends never>(): void {}
+
+test("Kind includes every exported concrete Type class", () => {
+  assertNever<{
+    [K in Exclude<
+      keyof typeof t,
+      "Type" | "UnmergeableType" | "ConstraintType" | "OpaqueType"
+    >]: (typeof t)[K] extends abstract new(...args: any[]) => infer Instance
+      ? Instance extends t.Type<any>
+        ? Instance extends t.Kind
+          ? never
+          : Instance
+        : never
+      : never;
+  }[Exclude<
+    keyof typeof t,
+    "Type" | "UnmergeableType" | "ConstraintType" | "OpaqueType"
+  >]>();
+
+  expect(true).toBe(true);
+});
+
 test("allows type narrowing for exhaustiveness checking", () => {
   // Let's write a function that takes a validation, and see if we can use type narrowing with
   // successive `if` statements to get ourselves to be able to call this function on a `t.Kind`.
