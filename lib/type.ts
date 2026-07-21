@@ -2,7 +2,6 @@ import { Err, Result } from "./result";
 import { unionIssue } from "./issue";
 import { RuntimeType, runtimeTypeOf } from "./issues/shared";
 import { asKind } from "./as-kind";
-import type { GetType } from "./get-type";
 import type { Kind, TypedKind } from "./kind";
 
 export type Projection<T> =
@@ -13,15 +12,10 @@ export type Projection<T> =
 export type ProjectionKind = Projection<any>["kind"];
 
 export abstract class Type<T> {
+  declare readonly _type: T;
+
   abstract check(val: any): Result<T>;
   abstract sliceResult(val: any): Result<T>;
-
-  protected abstract merge<R>(type: TypedKind<R>): TypedKind<T & R> | undefined;
-  protected abstract project(val: any): Projection<T>;
-
-  protected projectionOf<R>(type: Type<R>, val: any): Projection<R> {
-    return type.project(val);
-  }
 
   assert(val: any): T {
     return assert(this.check(val));
@@ -62,17 +56,15 @@ export abstract class Type<T> {
    * -----------------------------------------------------------------------------------------------
    */
 
-  and<R extends Type<any>>(r: R): Type<T & GetType<R>> {
-    const rightKind = asKind<GetType<R>>(r);
-    return intersect(asKind<T>(this), rightKind, (l, r) => {
-      const left = l as Type<any>;
-      const right = r as Type<any>;
-      return left.merge(r) || right.merge(l);
-    });
+  and<R>(r: Type<R>): Type<T & R> {
+    return new Intersection<T & R>([
+      asKind<T>(this),
+      asKind<R>(r),
+    ]);
   }
 
-  or<R extends Type<any>>(r: R): Either<T, GetType<R>> {
-    return new Either(asKind<T>(this), asKind<GetType<R>>(r));
+  or<R>(r: Type<R>): Either<T, R> {
+    return new Either(asKind<T>(this), asKind<R>(r));
   }
 
   /*
@@ -91,6 +83,24 @@ export abstract class Type<T> {
 
   comment(comment: string): Comment<T> {
     return new Comment(comment, asKind<T>(this));
+  }
+}
+
+export abstract class TypeImpl<T> extends Type<T> {
+  protected abstract merge<R>(type: TypedKind<R>): TypedKind<T & R> | undefined;
+  protected abstract project(val: any): Projection<T>;
+
+  protected projectionOf<R>(type: TypeImpl<R>, val: any): Projection<R> {
+    return type.project(val);
+  }
+
+  and<R>(r: Type<R>): Type<T & R> {
+    const rightKind = asKind<R>(r);
+    return intersect(asKind<T>(this), rightKind, (l, r) => {
+      const left = l as TypeImpl<any>;
+      const right = r as TypeImpl<any>;
+      return left.merge(r) || right.merge(l);
+    });
   }
 }
 
@@ -146,7 +156,7 @@ function assert<T>(result: Result<T>): T {
  * class in order to extend it (since they themselves are Types).
  */
 
-export abstract class UnmergeableType<T> extends Type<T> {
+export abstract class UnmergeableType<T> extends TypeImpl<T> {
   sliceResult(val: any): Result<T> {
     const checked = this.check(val);
     if(checked instanceof Err) return checked;
@@ -179,7 +189,7 @@ export abstract class OpaqueType<T> extends UnmergeableType<T> {
  * A type that delegates to the given type, but adds a comment when converted to TypeScript
  */
 
-export class Comment<T> extends Type<T> {
+export class Comment<T> extends TypeImpl<T> {
   readonly wrapped: TypedKind<T>;
 
   constructor(readonly commentStr: string, wrapped: Type<T>) {
@@ -267,7 +277,7 @@ export class Validation<T> extends ConstraintType<T> {
  * children are themselves doing key tracking.
  */
 
-export class Either<L, R> extends Type<L|R> {
+export class Either<L, R> extends TypeImpl<L|R> {
   readonly l: TypedKind<L>;
   readonly r: TypedKind<R>;
 
@@ -316,7 +326,7 @@ export class Either<L, R> extends Type<L|R> {
  * -------------------------------------------------------------------------------------------------
  */
 
-export class Intersection<T> extends Type<T> {
+export class Intersection<T> extends TypeImpl<T> {
   constructor(readonly operands: ReadonlyArray<Kind>) {
     super();
   }

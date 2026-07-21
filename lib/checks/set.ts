@@ -3,9 +3,9 @@ import { at } from "../issue";
 import { typeMismatch } from "../issues/shared";
 import { asKind } from "../as-kind";
 import { TypedKind } from "../kind";
-import { Projection, Type } from "../type";
+import { Projection, Type, TypeImpl } from "../type";
 
-export class SetType<V> extends Type<Set<V>> {
+export class SetType<V> extends TypeImpl<Set<V>> {
   readonly valueType: TypedKind<V>;
 
   constructor(v: Type<V>) {
