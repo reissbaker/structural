@@ -2,6 +2,7 @@ import { Err, Result } from "./result";
 import { unionIssue } from "./issue";
 import { RuntimeType, runtimeTypeOf } from "./issues/shared";
 import { asKind } from "./as-kind";
+import type { GetType } from "./get-type";
 import type { Kind, TypedKind } from "./kind";
 
 export type Projection<T> =
@@ -61,8 +62,8 @@ export abstract class Type<T> {
    * -----------------------------------------------------------------------------------------------
    */
 
-  and<R>(r: Type<R>): TypedKind<T&R> {
-    const rightKind = asKind<R>(r);
+  and<R extends Type<any>>(r: R): Type<T & GetType<R>> {
+    const rightKind = asKind<GetType<R>>(r);
     return intersect(asKind<T>(this), rightKind, (l, r) => {
       const left = l as Type<any>;
       const right = r as Type<any>;
@@ -70,8 +71,8 @@ export abstract class Type<T> {
     });
   }
 
-  or<R>(r: Type<R>): Either<T, R> {
-    return new Either(asKind<T>(this), asKind<R>(r));
+  or<R extends Type<any>>(r: R): Either<T, GetType<R>> {
+    return new Either(asKind<T>(this), asKind<GetType<R>>(r));
   }
 
   /*
@@ -79,7 +80,7 @@ export abstract class Type<T> {
    * -----------------------------------------------------------------------------------------------
    */
 
-  validate(desc: string, fn: Validator<T>): TypedKind<T> {
+  validate(desc: string, fn: Validator<T>): Type<T> {
     return this.and(new Validation(desc, fn));
   }
 
@@ -338,7 +339,7 @@ export class Intersection<T> extends Type<T> {
   }
 
   protected merge<R>(type: TypedKind<R>): TypedKind<T & R> {
-    return this.and(type);
+    return asKind(this.and(type));
   }
 
   protected project(val: any): Projection<T> {

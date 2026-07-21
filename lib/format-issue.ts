@@ -14,13 +14,14 @@ export function formatIssue(issue: Issue, options: FormatErrorOptions = {}): str
     ? Infinity
     : options.maxNestedErrors;
   validateMaxNestedErrors(maxNestedErrors);
-  return format(issue, [], maxNestedErrors);
+  return format(issue, [], maxNestedErrors, false);
 }
 
 function format(
   issue: Issue,
   path: ReadonlyArray<PathSegment>,
   maxNestedErrors: number,
+  limitUnionOptions: boolean,
 ): string {
   switch(issue.kind) {
     case "type":
@@ -44,11 +45,19 @@ function format(
     case "never":
       return `${formatSubject(path, issue.subject)} cannot satisfy never`;
     case "at":
-      return format(issue.issue, [ ...path, ...issue.path ], maxNestedErrors);
+      return format(issue.issue, [ ...path, ...issue.path ], maxNestedErrors, limitUnionOptions);
     case "multiple":
-      return issue.issues.map(child => format(child, path, maxNestedErrors)).join("\n");
+      return issue.issues.map(child => {
+        return format(child, path, maxNestedErrors, limitUnionOptions);
+      }).join("\n");
     case "union":
-      return formatUnion(issue.issues, path, issue.subject, maxNestedErrors);
+      return formatUnion(
+        issue.issues,
+        path,
+        issue.subject,
+        maxNestedErrors,
+        limitUnionOptions,
+      );
     default:
       return assertNever(issue);
   }
@@ -59,6 +68,7 @@ function formatUnion(
   path: ReadonlyArray<PathSegment>,
   unionSubject: RuntimeType,
   maxNestedErrors: number,
+  limitOptions: boolean,
 ): string {
   const expectations = issues.map(issue => simpleExpectation(issue, path));
   if(expectations.every((value): value is SimpleExpectation => value !== undefined)) {
@@ -69,10 +79,15 @@ function formatUnion(
   }
 
   const heading = unionHeading(formatSubject(path, unionSubject), issues.length);
-  const branches = issues.map((issue, index) => {
+  const visibleIssues = limitOptions ? issues.slice(0, maxNestedErrors) : issues;
+  const branches = visibleIssues.map((issue, index) => {
     const option = formatUnionOption(issue, path, maxNestedErrors);
     return indentBranch(`${index + 1}. `, option);
   });
+  const omitted = issues.length - visibleIssues.length;
+  if(omitted > 0) {
+    branches.push(`... ${count(omitted, "more option", "more options")} omitted.`);
+  }
   return [ heading, ...branches ].join("\n");
 }
 
@@ -88,7 +103,7 @@ function formatUnionOption(
 ): string {
   const errors = nestedErrors(issue, path);
   const visible = errors.slice(0, maxNestedErrors).map(error => {
-    return format(error.issue, error.path, maxNestedErrors);
+    return format(error.issue, error.path, maxNestedErrors, true);
   });
   const omitted = errors.length - visible.length;
   if(omitted > 0) {

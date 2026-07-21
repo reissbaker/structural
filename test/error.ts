@@ -382,6 +382,43 @@ describe("limited union error formatting", () => {
       "   ... 1 more error omitted for this option.",
     ].join("\n"));
   });
+
+  test("limits the number of options in deeply nested unions", () => {
+    const Stream = t.union(
+      t.undef,
+      t.undef,
+      t.nil,
+      t.undef,
+      t.value(false),
+      t.nil,
+      t.undef,
+      t.nil,
+      t.nil,
+    );
+    const type = t.subtype({
+      model: t.str,
+      messages: t.array(t.str),
+    }).or(t.subtype({
+      stream: Stream,
+      model: t.str,
+      messages: t.array(t.str),
+    }));
+    const error = errorOf(type.check({ stream: true }));
+
+    expect(error.formatError({ maxNestedErrors: 4 })).toBe([
+      "object did not match any option in the schema. There were 2 options, and all options had errors. The errors for each option were:",
+      "1. .model is missing",
+      "   .messages is missing",
+      "2. .stream did not match any option in the schema. There were 9 options, and all options had errors. The errors for each option were:",
+      "   1. .stream is not undefined",
+      "   2. .stream is not undefined",
+      "   3. .stream does not equal null",
+      "   4. .stream is not undefined",
+      "   ... 5 more options omitted.",
+      "   .model is missing",
+      "   .messages is missing",
+    ].join("\n"));
+  });
 });
 
 describe("discriminated structural unions", () => {
