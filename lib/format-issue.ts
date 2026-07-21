@@ -70,7 +70,8 @@ function formatUnion(
   maxNestedErrors: number,
   limitOptions: boolean,
 ): string {
-  const expectations = issues.map(issue => simpleExpectation(issue, path));
+  const distinctIssues = deduplicateUnionIssues(issues, path);
+  const expectations = distinctIssues.map(issue => simpleExpectation(issue, path));
   if(expectations.every((value): value is SimpleExpectation => value !== undefined)) {
     const first = expectations[0];
     if(expectations.every(value => samePath(value.path, first.path) && value.subject === first.subject)) {
@@ -78,17 +79,32 @@ function formatUnion(
     }
   }
 
-  const heading = unionHeading(formatSubject(path, unionSubject), issues.length);
-  const visibleIssues = limitOptions ? issues.slice(0, maxNestedErrors) : issues;
+  const heading = unionHeading(formatSubject(path, unionSubject), distinctIssues.length);
+  const visibleIssues = limitOptions
+    ? distinctIssues.slice(0, maxNestedErrors)
+    : distinctIssues;
   const branches = visibleIssues.map((issue, index) => {
     const option = formatUnionOption(issue, path, maxNestedErrors);
     return indentBranch(`${index + 1}. `, option);
   });
-  const omitted = issues.length - visibleIssues.length;
+  const omitted = distinctIssues.length - visibleIssues.length;
   if(omitted > 0) {
     branches.push(`... ${count(omitted, "more option", "more options")} omitted.`);
   }
   return [ heading, ...branches ].join("\n");
+}
+
+function deduplicateUnionIssues(
+  issues: ReadonlyArray<Issue>,
+  path: ReadonlyArray<PathSegment>,
+): Issue[] {
+  const seen = new Set<string>();
+  return issues.filter(issue => {
+    const formatted = format(issue, path, Infinity, false);
+    if(seen.has(formatted)) return false;
+    seen.add(formatted);
+    return true;
+  });
 }
 
 type NestedError = {
